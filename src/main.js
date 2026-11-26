@@ -29,7 +29,7 @@ const app = {
   navigate(hash) { if (location.hash !== hash) location.hash = hash; else route(); },
 };
 
-const mini = createMiniTimer(app, { onResume: () => resumeIfPaused() });
+const mini = createMiniTimer(app);
 app.onMiniChange = () => { renderChrome(); app.view?.render(); };
 const toggleMini = () => (mini.isOpen ? mini.close() : mini.open().catch((e) => toast(`Couldn't open the mini timer: ${e.message}`, { error: true })));
 // Used by the top card's mini-timer buttons.
@@ -124,12 +124,7 @@ bar.btn.addEventListener('click', async () => {
 });
 
 async function resumeIfPaused() {
-  if (!app.data.paused) return;
-  app.justResumed = app.data.paused.taskId;
-  const id = await app.repo.resumePaused();
-  if (!id) { app.justResumed = null; return; }
-  const t = app.data.tasks.find((x) => x.id === id);
-  toast(`Resumed ${t?.name ?? 'task'}`);
+  if (app.data.paused) await app.actions.resume();
 }
 
 let lastStatsAt = 0;

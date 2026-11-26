@@ -31,12 +31,8 @@ your device.
   at 100%; timing continues.
 - **Mini timer.** In Chromium browsers (Chrome, Edge, Vivaldi, Opera) on a
   computer, the ↗ button in the top card opens a small always-on-top window
-  (Document Picture-in-Picture) that can be resized far narrower than the
-  browser's minimum window width (~500px). It packs the home view: the running
-  task as the biggest card (click anywhere on it to stop), a scrollable grid of
-  tasks (2 rows visible at the smallest size; click to start, switching asks
-  inside the mini window), search (🔍, or press / or Ctrl+F; arrow keys, Enter,
-  Esc), Undo after start/stop, and a ⌂ button that brings the full app forward.
+  with the whole home view packed in (minimum 240 × 156). See
+  [docs/MINI_TIMER.md](docs/MINI_TIMER.md) for its features and rules.
 - **Streak.** A 🔥 badge next to the logo counts days in a row with tracked time.
 - **Options menu.** Hover a card (mouse) or press and hold (touch): Edit, Add
   session manually, View history, Archive.

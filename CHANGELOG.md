@@ -5,6 +5,11 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.12.0 — Major
+- Mini timer works fully at its smallest size: a minimum of 240 × 156 (two rows of tasks at legible text sizes); smaller windows are resized back up where the browser allows, otherwise the content scrolls.
+- Mini timer gains the rest of the home page: + New task (or N) with name, max hours, expiry and notes; task options (⋯, right-click, long-press or Shift+F10): Edit, Add session, History, Archive; Undo for every change; "Switch to …?" confirm; create-only ⏳ chip; 🔥 streak; idle stats (Today, sessions, daily avg); progress toward max hours; over-limit / expiring labels.
+- Architecture: the full app and the mini timer share one set of actions and form rules (`createActions(app, ui)`, `logic/forms.js`); only their UI wrappers differ. Rules recorded in docs/MINI_TIMER.md.
+
 ## 0.11.0 — Major
 - Mini timer now packs the home view (the main app is unchanged):
   - The running task is the biggest card, full width; click anywhere on it to stop (Enter/Space too). Paused shows Resume; idle shows the time and today's total.

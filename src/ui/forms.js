@@ -1,6 +1,7 @@
 import { h } from './dom.js';
 import { modal } from './dialogs.js';
-import { parseHours, parseExpiry, fmtDate, toInputDate, toInputTime, relativeExpiry, fmtDuration } from '../logic/time.js';
+import { toInputDate, toInputTime, fmtDuration } from '../logic/time.js';
+import { checkTask, checkManualSession } from '../logic/forms.js';
 
 function field(label, input, hint) {
   const hintEl = h('small', { class: 'hint' }, hint || '');
@@ -26,15 +27,13 @@ export function taskForm(task = null) {
       const save = h('button', { class: 'btn btn-primary', type: 'submit' }, task ? 'Save' : 'Create task');
 
       function update() {
-        let ok = !!name.value.trim();
-        const hrs = limit.value.trim() ? parseHours(limit.value) : null;
-        if (limit.value.trim() && !(hrs > 0)) { fLimit.hintEl.textContent = 'Enter hours like 20, 2.5 or 7:30'; fLimit.hintEl.classList.add('err'); ok = false; }
-        else { fLimit.hintEl.textContent = hrs ? `= ${fmtDuration(hrs * 3600000)}. Turns yellow at 70%.` : 'Turns yellow at 70%, shows "Over limit" at 100%.'; fLimit.hintEl.classList.remove('err'); }
-        const ex = parseExpiry(expiry.value);
-        if (ex.error) { fExpiry.hintEl.textContent = ex.error; fExpiry.hintEl.classList.add('err'); ok = false; }
-        else { fExpiry.hintEl.textContent = ex.value ? `${fmtDate(ex.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · ${relativeExpiry(ex.value)}` : 'Optional. Turns red when it is close.'; fExpiry.hintEl.classList.remove('err'); }
-        save.disabled = !ok;
-        return ok ? { name: name.value.trim(), notes: notes.value.trim(), maxHours: hrs, expiresAt: ex.value } : null;
+        const r = checkTask({ name: name.value, notes: notes.value, limit: limit.value, expiry: expiry.value });
+        fLimit.hintEl.textContent = r.errors.limit || r.hints.limit;
+        fLimit.hintEl.classList.toggle('err', !!r.errors.limit);
+        fExpiry.hintEl.textContent = r.errors.expiry || r.hints.expiry;
+        fExpiry.hintEl.classList.toggle('err', !!r.errors.expiry);
+        save.disabled = !r.ok;
+        return r.value;
       }
       for (const i of [name, limit, expiry]) i.addEventListener('input', update);
       update();
@@ -57,12 +56,11 @@ export function manualLogForm(task, session = null) {
       const fHours = field('Hours (required)', hours, '');
       const save = h('button', { class: 'btn btn-primary', type: 'submit' }, session ? 'Save' : 'Add session');
       const update = () => {
-        const v = parseHours(hours.value);
-        const ok = v > 0;
-        fHours.hintEl.textContent = hours.value.trim() && !ok ? 'Enter hours like 2, 1.5 or 1:30' : ok ? `= ${fmtDuration(v * 3600000)}` : '';
-        fHours.hintEl.classList.toggle('err', !!hours.value.trim() && !ok);
-        save.disabled = !ok;
-        return ok ? { hours: v, date: date.value, time: time.value } : null;
+        const r = checkManualSession({ hours: hours.value, date: date.value, time: time.value });
+        fHours.hintEl.textContent = r.error || r.hint;
+        fHours.hintEl.classList.toggle('err', !!r.error);
+        save.disabled = !r.ok;
+        return r.value;
       };
       hours.addEventListener('input', update);
       update();

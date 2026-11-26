@@ -1,18 +1,30 @@
-// User actions shared by several views. Every destructive or surprising
-// action is either confirmed first or offers Undo.
+// User actions: the one place that decides what starting, stopping, creating,
+// archiving… actually do. Every destructive or surprising action is either
+// confirmed first or offers Undo.
+//
+// The logic is shared by every front end; only the "UI wrapper" differs. The
+// full app passes its dialogs and toasts (the default below); the mini timer
+// passes its own inline forms and strip. A change here reaches both.
 import { confirmDialog, toast, errorToast, typeToConfirm } from './dialogs.js';
 import { taskForm, manualLogForm, timedSessionForm } from './forms.js';
 import { fmtDuration } from '../logic/time.js';
 
 export const CREATE_ONLY_MS = 15 * 60000;
 
-export function createActions(app) {
+export const fullAppUi = (app) => ({
+  toast, errorToast, confirm: confirmDialog, typeToConfirm, taskForm, manualLogForm, timedSessionForm,
+  afterCreate: () => app.navigate('#/'),
+});
+
+export function createActions(app, ui = fullAppUi(app)) {
   const { repo } = app;
   const name = (id) => app.data.tasks.find((t) => t.id === id)?.name ?? 'task';
+  const { toast, errorToast, typeToConfirm, taskForm, manualLogForm, timedSessionForm } = ui;
+  const confirmDialog = ui.confirm;
 
   const safe = (fn) => async (...args) => { try { return await fn(...args); } catch (e) { errorToast(e); } };
 
-  return {
+  const actions = {
     // Card click: start this task, stop it if it is running, or confirm a switch.
     activate: safe(async (taskId) => {
       const running = app.running();
@@ -20,23 +32,25 @@ export function createActions(app) {
         const stopped = await repo.stopRunning();
         const msg = stopped?.dropped ? `Stopped ${name(taskId)} (under 5 s, not saved)` : `Stopped ${name(taskId)} · ${fmtDuration(stopped.session.end - stopped.session.start)}`;
         toast(msg, { subtle: true, action: 'Undo', onAction: safe(() => repo.undoStop(stopped)) });
-        return;
+        return 'stopped';
       }
       if (running) {
         const ok = await confirmDialog({
           title: 'Switch task?',
           message: `Stop "${name(running.taskId)}" and start timing "${name(taskId)}"?`,
           confirmText: 'Switch',
+          short: `Switch to ${name(taskId)}?`, // for compact UIs (mini timer)
         });
-        if (!ok) return;
+        if (!ok) return 'cancelled';
       }
       const info = await repo.startTask(taskId);
       toast(`Started ${name(taskId)}`, { subtle: true, action: 'Undo', onAction: safe(() => repo.undoStart(info)) });
+      return 'started';
     }),
 
     stop: safe(async () => {
       const running = app.running();
-      if (running) await app.actions.activate(running.taskId);
+      if (running) await actions.activate(running.taskId);
     }),
 
     // New tasks start timing immediately, unless "create only" mode is on.
@@ -44,13 +58,13 @@ export function createActions(app) {
       const v = await taskForm();
       if (!v) return;
       const task = await repo.createTask(v);
-      app.navigate('#/');
+      ui.afterCreate?.(task);
       const until = app.data.settings.createOnlyUntil || 0;
       if (Date.now() < until) {
         const mins = Math.ceil((until - Date.now()) / 60000);
         toast(`Created ${task.name}. Not tracking (create-only mode, ${mins} min left).`, {
           subtle: true,
-          action: 'Start now', duration: 6000, onAction: safe(() => app.actions.activate(task.id)),
+          action: 'Start now', duration: 6000, onAction: safe(() => actions.activate(task.id)),
         });
         return;
       }
@@ -72,6 +86,16 @@ export function createActions(app) {
     }),
 
     endCreateOnly: safe(() => repo.updateSettings({ createOnlyUntil: 0 })),
+
+    // Resume a task paused from the top bar (as a new session).
+    resume: safe(async () => {
+      const paused = app.data.paused;
+      if (!paused) return;
+      app.justResumed = paused.taskId;
+      const id = await repo.resumePaused();
+      if (!id) { app.justResumed = null; return; }
+      toast(`Resumed ${name(id)}`);
+    }),
 
     editTask: safe(async (taskId) => {
       const task = app.data.tasks.find((t) => t.id === taskId);
@@ -139,4 +163,5 @@ export function createActions(app) {
       return true;
     }),
   };
+  return actions;
 }
