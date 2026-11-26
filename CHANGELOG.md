@@ -5,6 +5,9 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.12.2 — Minor
+- Mini timer heights are now fixed and never change with the window: the timer card is 60px; ⌂ and + together match it (28px each + 4px gap); 🔍, the search box and every task row are 30px (half the card); all gaps are 4px. A bigger window only adds width and more visible rows. Smallest size 240 × 136.
+
 ## 0.12.1 — Minor
 - Mini timer: the top bar is gone. ⌂ Home (top), + New task (middle) and 🔍 Search (bottom, next to the tasks) now sit in a slim rail on the right; the search box opens above the tasks. Streak and date are no longer shown in the mini timer. Smallest size is now 240 × 128 (still two rows of tasks). The full app is unchanged.
 

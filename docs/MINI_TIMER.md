@@ -7,20 +7,26 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
 
 - Chromium lets this window shrink to about **240 × 52** CSS px (measured from
   a Vivaldi screenshot: 300 × 62 screen px at 125% scaling). That is too small.
-- The mini timer enforces a minimum of **240 × 128** (`MIN_W` × `MIN_H`): the
-  smallest size that fits everything at legible text sizes:
-  main card 52 + **two rows of tasks** (2 × 29 + 3) + gap 4 + padding 2 × 4.
-  (It was 240 × 156 with a top bar; the owner removed the top bar.)
-- **No top bar.** A slim rail on the right holds, top to bottom: ⌂ Home (top),
-  + New task (middle), 🔍 Search (bottom, next to the tasks it searches). The
-  search box opens above the task grid.
+- **Fixed heights (owner's rule):** nothing changes height when the window is
+  resized, larger or smaller; only widths stretch.
+  - Main (timer) card = **H1 = 60px**.
+  - ⌂ and + stacked = H1 (two 28px icons + one 4px gap), level with the card.
+  - 🔍 = **H1 / 2 = 30px**; the search box and every task row are also 30px.
+  - Every gap is the same 4px (between ⌂, + and 🔍, and everywhere else).
+- The mini timer enforces a minimum of **240 × 136** (`MIN_W` × `MIN_H`):
+  4 + card 60 + 4 + two task rows (30 + 4 + 30) + 4. Text stays legible
+  (11px task names, 10px secondary text).
+  (History: 240 × 156 with a top bar, then 240 × 128 before the fixed heights.)
+- **No top bar.** A slim rail on the right holds, top to bottom: ⌂ Home, + New
+  task (these two level with the card), then 🔍 Search level with the first
+  task row. The search box opens in that row, beside 🔍.
 - **Not in the mini timer (owner's decision):** streak, day and date.
 - Below that size the window is resized back up where the browser allows it
   (resizing needs a user gesture, so it also retries on the next click);
   otherwise the content scrolls so nothing becomes unreachable.
 - Smallest legible text: 11 px task names, 10 px secondary text.
-- The smallest size must be fully usable. Larger windows may stretch the
-  elements a little (fonts use clamp(), more grid columns/rows).
+- The smallest size must be fully usable. Larger windows only add width
+  (more task columns) and more visible rows; heights and fonts stay fixed.
 - Changes to the mini timer must not change the full app's UI.
 
 ## Architecture: shared logic, separate UI wrappers

@@ -12,8 +12,9 @@
 // MIN_W × MIN_H below is the smallest size that fits everything at legible
 // text sizes (11px task names, two rows of tasks); below it the window is
 // resized back up where the browser allows, and otherwise scrolls.
-// Layout: no top bar; a slim rail on the right holds ⌂ (top), + (middle) and
-// 🔍 (bottom, next to the tasks it searches).
+// Layout: no top bar; a slim rail on the right holds ⌂, + and 🔍.
+// Fixed heights (never change with the window): the card is H1; ⌂ + + together
+// span H1 (two icons + one gap); 🔍 and every task row are H1 / 2; all gaps equal.
 import { fmtClock, fmtDuration, toInputDate, toInputTime } from '../logic/time.js';
 import { sessionDuration, sortMainList } from '../logic/tasks.js';
 import { checkTask, checkManualSession } from '../logic/forms.js';
@@ -21,9 +22,12 @@ import { createActions } from './actions.js';
 
 export const miniSupported = () => 'documentPictureInPicture' in window;
 
-// card 52 + two task rows (2 × 29 + 3) + gap 4 + padding (2 × 4)
+export const H1 = 60;      // main card = ⌂ + gap + +
+export const GAP = 4;      // every gap
+export const ROW = H1 / 2; // 🔍, search box, each task row
+// padding + card + gap + two task rows + padding
 export const MIN_W = 240;
-export const MIN_H = 128;
+export const MIN_H = GAP + H1 + GAP + ROW + GAP + ROW + GAP; // 136
 
 const ICON = {
   stop: 'M7 7h10v10H7z',
@@ -40,9 +44,10 @@ const STYLES = `
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #f4f6f9 !important; color: #1f2937; filter: none !important;
   font: 11px/1.2 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-body { display: grid; grid-template-columns: minmax(0, 1fr) 22px; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding: 4px; overflow: hidden; position: relative; min-width: ${MIN_W - 8}px; }
+html { --h1: ${H1}px; --gap: ${GAP}px; --icon: ${(H1 - GAP) / 2}px; --row: ${ROW}px; }
+body { display: grid; grid-template-columns: minmax(0, 1fr) var(--icon); grid-template-rows: var(--h1) minmax(0, 1fr); gap: var(--gap); padding: var(--gap); align-content: start; overflow: hidden; position: relative; min-width: ${MIN_W - 8}px; }
 body.cramped { overflow-y: auto; height: auto; min-height: 100%; }
-body.cramped .area { min-height: 61px; }
+body.cramped .area { min-height: calc(var(--row) * 2 + var(--gap)); }
 .main-col { grid-column: 1; }
 .card { grid-row: 1; }
 .area { grid-row: 2; }
@@ -53,7 +58,9 @@ button { cursor: pointer; }
 :focus-visible { outline: 2px solid #1a56db; outline-offset: 1px; }
 
 /* Rail: ⌂ top, + middle, 🔍 bottom (next to the tasks) */
-.rail { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: space-between; align-items: center; min-height: 0; }
+.rail { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: var(--gap); align-items: stretch; min-height: 0; }
+.rail .ibtn { width: var(--icon); height: var(--icon); }
+.rail .ibtn.find { height: var(--row); }
 .chip { display: inline-flex; align-items: center; padding: 0 5px; height: 16px; border-radius: 99px; font-weight: 700; font-size: 10px; white-space: nowrap; border: 1px solid transparent; cursor: pointer; }
 .co { background: #fff7e0; color: #5c4400; border-color: #f0d58a; }
 .co:hover { background: #ffefc2; }
@@ -61,15 +68,15 @@ button { cursor: pointer; }
 .ibtn:hover, .ibtn[aria-pressed=true] { color: #1a56db; border-color: #b9cdf5; background: #eaf1fe; }
 .ibtn.add { color: #fff; background: #1a56db; border-color: #1a56db; }
 .ibtn.add:hover { background: #1747b8; color: #fff; }
-.search { flex: none; width: 100%; height: 22px; margin-bottom: 3px; border: 1px solid #b9cdf5; border-radius: 7px; padding: 0 6px; background: #fff; }
+.search { flex: none; width: 100%; height: var(--row); margin-bottom: var(--gap); border: 1px solid #b9cdf5; border-radius: 7px; padding: 0 6px; background: #fff; }
 
 /* Main card: running task (whole card = Stop), paused (Resume), or idle clock + stats */
-.card { position: relative; flex: none; width: 100%; min-height: 52px; border-radius: 10px; border: 1.5px solid #1a56db; background: linear-gradient(180deg, #f3f8ff, #fff);
+.card { position: relative; flex: none; width: 100%; height: var(--h1); overflow: hidden; border-radius: 10px; border: 1.5px solid #1a56db; background: linear-gradient(180deg, #f3f8ff, #fff);
   padding: 4px 8px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 8px; text-align: left; transition: transform .12s, border-color .15s; }
 .card .top { grid-column: 1 / -1; display: flex; gap: 6px; min-width: 0; font-size: 11px; line-height: 14px; }
 .card .name { font-weight: 650; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
 .card .meta { color: #6b7280; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.card .big { font-weight: 750; font-size: clamp(20px, min(11vw, 16vh), 56px); line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; display: flex; align-items: center; gap: 5px; white-space: nowrap; min-width: 0; overflow: hidden; }
+.card .big { font-weight: 750; font-size: 30px; line-height: 34px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; display: flex; align-items: center; gap: 5px; white-space: nowrap; min-width: 0; overflow: hidden; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex: none; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
 .card .act { display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; border-radius: 8px; font-weight: 700; color: #fff; background: #c62828; white-space: nowrap; }
@@ -80,7 +87,7 @@ button { cursor: pointer; }
 .card.paused .act { background: #16a34a; }
 .card.idle { border: 1.5px dashed #c9d3df; background: #fbfcfe; cursor: default; }
 .card.idle:active { transform: none; }
-.card.idle .big { font-size: clamp(18px, min(9vw, 14vh), 44px); }
+.card.idle .big { font-size: 26px; line-height: 30px; }
 .card .corner { justify-self: end; align-self: start; }
 .card .stats { grid-column: 1 / -1; color: #4b5563; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .card .stats b { color: #1f2937; }
@@ -89,14 +96,14 @@ button { cursor: pointer; }
 .bar-progress.yellow i { background: #e0a800; } .bar-progress.over i { background: #d93025; }
 
 /* Task grid: two rows always visible, scroll for more; grows with the window */
-.area { flex: 1; min-height: 61px; position: relative; display: flex; flex-direction: column; }
+.area { flex: 1; min-height: calc(var(--row) * 2 + var(--gap)); position: relative; display: flex; flex-direction: column; }
 .grid-wrap { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(120px, calc(50% - 2px)), 1fr)); grid-auto-rows: clamp(29px, 10vh, 40px); gap: 3px; }
-.tile { position: relative; display: grid; align-content: center; gap: 1px; min-width: 0; padding: 2px 6px; border: 1px solid #e2e7ee; border-radius: 7px; background: #fff; text-align: left; overflow: hidden; transition: border-color .15s, background .15s, transform .1s; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(120px, calc(50% - 2px)), 1fr)); grid-auto-rows: var(--row); gap: var(--gap); }
+.tile { position: relative; display: grid; align-content: center; gap: 1px; min-width: 0; padding: 0 6px; border: 1px solid #e2e7ee; border-radius: 7px; background: #fff; text-align: left; overflow: hidden; transition: border-color .15s, background .15s, transform .1s; }
 .tile:hover, .tile.sel { border-color: #1a56db; background: #f3f8ff; }
 .tile:active { transform: scale(.97); }
-.tile .t1 { font-weight: 650; font-size: clamp(11px, 3.4vw, 13px); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-.tile .t2 { font-size: clamp(10px, 3vw, 12px); line-height: 1.2; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.tile .t1 { font-weight: 650; font-size: 11px; line-height: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+.tile .t2 { font-size: 10px; line-height: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .tile .t2 .bad { color: #b42318; font-weight: 600; }
 .tile.red { border-left: 3px solid #d93025; }
 .tile.yellow { border-left: 3px solid #e0a800; }
@@ -126,7 +133,7 @@ button { cursor: pointer; }
 .menu .btn { width: 100%; text-align: left; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Feedback strip (undo / confirm / errors), over the bottom of the grid */
-.strip { position: absolute; left: 4px; right: 30px; bottom: 4px; z-index: 5; display: flex; align-items: center; gap: 4px; background: #1f2937; color: #fff; border-radius: 8px; padding: 3px 3px 3px 8px; min-height: 26px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
+.strip { position: absolute; left: var(--gap); right: calc(var(--icon) + var(--gap) * 2); bottom: var(--gap); z-index: 5; display: flex; align-items: center; gap: 4px; background: #1f2937; color: #fff; border-radius: 8px; padding: 3px 3px 3px 8px; min-height: 26px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
 .strip span { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; }
 .strip button { border: 0; border-radius: 6px; padding: 3px 7px; font-weight: 700; background: none; color: #8ab4ff; flex: none; }
 .strip button.primary { background: #1a56db; color: #fff; }
@@ -229,7 +236,7 @@ export function createMiniTimer(app) {
     // Create-only mode chip (lives on the main card); a span because the card is a button.
     ui.co = el('span', { class: 'chip co', role: 'button', tabindex: '0', hidden: true });
     ui.addBtn = el('button', { class: 'ibtn add', type: 'button', title: 'New task (N)', 'aria-label': 'New task' }, icon('plus'));
-    ui.searchBtn = el('button', { class: 'ibtn', type: 'button', title: 'Search tasks (/)', 'aria-label': 'Search tasks', 'aria-pressed': 'false' }, icon('search'));
+    ui.searchBtn = el('button', { class: 'ibtn find', type: 'button', title: 'Search tasks (/)', 'aria-label': 'Search tasks', 'aria-pressed': 'false' }, icon('search'));
     ui.homeBtn = el('button', { class: 'ibtn', type: 'button', title: 'Open the full app', 'aria-label': 'Open the full app' }, icon('home'));
     ui.card = el('button', { class: 'card idle', type: 'button' });
     ui.grid = el('div', { class: 'grid', role: 'grid', 'aria-label': 'Tasks' });
