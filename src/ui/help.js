@@ -4,16 +4,17 @@ import { h } from './dom.js';
 export function howToSteps() {
   return h('ol', { class: 'howto' },
     h('li', null, h('span', { class: 'howto-emoji' }, '➕'), h('span', null, 'Tap ', h('strong', null, '+'), ' to add a task. It starts timing right away.')),
-    h('li', null, h('span', { class: 'howto-emoji' }, '▶️'), h('span', null, 'Tap any task to time it. One runs at a time.')),
-    h('li', null, h('span', { class: 'howto-emoji' }, '⏹️'), h('span', null, 'Done? Tap the running task to ', h('strong', null, 'stop'), ' it.')),
+    h('li', null, h('span', { class: 'howto-emoji' }, '⏱️'), h('span', null, 'Tap any task to time it. One runs at a time.')),
+    h('li', null, h('span', { class: 'howto-emoji' }, '🛑'), h('span', null, 'Done? Tap the running task to ', h('strong', null, 'stop'), ' it.')),
     h('li', null, h('span', { class: 'howto-emoji' }, '📊'), h('span', null, 'See totals and sessions in ', h('strong', null, 'History'), '.')));
 }
 
 export function moreTips() {
   return h('ul', { class: 'howto tips' },
-    h('li', null, h('span', { class: 'howto-emoji' }, '⋯'), h('span', null, 'Hover a task (or press and hold on a phone) to edit it, log time by hand, or archive it.')),
+    h('li', null, h('span', { class: 'howto-emoji more-dots' }, '⋯'), h('span', null, 'Hover a task (or press and hold on a phone) to edit it, log time by hand, or archive it.')),
     h('li', null, h('span', { class: 'howto-emoji' }, '⏸️'), h('span', null, 'In History or Settings, pause from the top bar. Tracking resumes when you return.')),
-    h('li', null, h('span', { class: 'howto-emoji' }, '🟥'), h('span', null, 'Red: expiring soon. 🟨 Yellow: 70% of its max hours used.')),
+    h('li', null, h('span', { class: 'swatch swatch-red', 'aria-hidden': 'true' }), h('span', null, h('strong', null, 'Red card'), ': expires soon (moves to the top).')),
+    h('li', null, h('span', { class: 'swatch swatch-yellow', 'aria-hidden': 'true' }), h('span', null, h('strong', null, 'Yellow card'), ': 70% of its max hours used.')),
     h('li', null, h('span', { class: 'howto-emoji' }, '💾'), h('span', null, 'Your data lives only in this browser. Export a backup in Settings now and then.')));
 }
 

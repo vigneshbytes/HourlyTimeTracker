@@ -19,15 +19,15 @@ export function createTaskListView(app) {
   // tracking, otherwise this idle panel (greeting, last task, stats, quote) or,
   // for new users, a short how-to.
   const greetEl = h('span', { class: 'idle-greet' });
+  const timeEl = h('time', { class: 'idle-time' });
   const dateEl = h('span', { class: 'idle-date' });
-  const lastEl = h('p', { class: 'idle-last' });
   const statsEl = h('dl', { class: 'idle-stats' });
   const quoteText = h('p', { class: 'q-text' });
   const quoteWho = h('p', { class: 'q-who' });
   const quoteEl = h('figure', { class: 'idle-quote' }, quoteText, quoteWho);
   const hero = h('div', { class: 'idle-panel', 'aria-live': 'polite' },
-    h('div', { class: 'idle-top' }, greetEl, dateEl),
-    lastEl, statsEl, quoteEl);
+    h('div', { class: 'idle-top' }, h('div', { class: 'idle-when' }, timeEl, dateEl), greetEl),
+    statsEl, quoteEl);
   const intro = h('div', { class: 'idle-panel intro' },
     h('p', { class: 'intro-title' }, '👋 Welcome! Let’s track your time'),
     howToSteps(),
@@ -65,26 +65,8 @@ export function createTaskListView(app) {
     hero.hidden = !showIdle;
     if (!showIdle) return;
 
-    greetEl.textContent = greeting();
-    dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-
-    // Last task worked on, with a one-tap way to continue it.
-    let last = null;
-    for (const ses of app.data.sessions) {
-      const t = ses.end ?? ses.createdAt;
-      if (!last || t > last.t) last = { t, taskId: ses.taskId, timed: !ses.manual };
-    }
-    const lastTask = last && app.data.tasks.find((x) => x.id === last.taskId && x.status === 'active');
-    if (lastTask) {
-      lastEl.replaceChildren(
-        h('span', { class: 'last-text' },
-          h('span', { class: 'muted' }, 'Last: '),
-          h('strong', null, lastTask.name),
-          last.timed ? h('span', { class: 'muted' }, ` · stopped ${fmtTime(last.t)}`) : null),
-        h('button', { type: 'button', class: 'continue-btn', onclick: () => app.actions.activate(lastTask.id) }, svgIcon('play', 14), ' Continue'));
-    } else {
-      lastEl.replaceChildren(h('span', { class: 'muted' }, 'Nothing running. Tap a task below to start tracking.'));
-    }
+    clockKey = '';
+    tickHero();
 
     const st = overviewStats(app.data.sessions);
     statsEl.replaceChildren(...[
@@ -95,7 +77,21 @@ export function createTaskListView(app) {
     ].map(([label, value]) => h('div', { class: 'stat' }, h('dt', { class: 'stat-label' }, label), h('dd', { class: 'stat-value' }, value))));
   }
 
-  function tickHero() {}
+  // Clock: the device's own clock and time zone (set in the operating system).
+  // It never depends on the network or IP address, so a VPN can't change it.
+  // Text is only rewritten when the minute changes.
+  let clockKey = '';
+  function tickHero() {
+    if (hero.hidden) return;
+    const now = new Date();
+    const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
+    if (key === clockKey) return;
+    clockKey = key;
+    timeEl.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+    timeEl.dateTime = now.toISOString();
+    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    greetEl.textContent = greeting();
+  }
 
   function tickCreateOnly() {
     const until = app.data.settings.createOnlyUntil || 0;

@@ -5,6 +5,10 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.7.0 — Major
+- Idle card: the current time (hour:minute AM/PM, from the device's own clock and time zone) and full date lead the card; the "Last task" line is removed; greeting moves to the side.
+- Help: red 🛑 for stop, ⏱️ for timing, and real colour swatches matching the red/yellow cards instead of emoji squares (which render differently on each OS).
+
 ## 0.6.1 — Minor
 - Fix: the app could get stuck on "Loading…" after an update. The offline cache could save an outdated copy of the page (GitHub Pages caches pages for 10 minutes) that pointed at files that no longer existed. The cache now always downloads fresh files and checks they match before switching over.
 - Updates now install by themselves; a "TimeTracker was updated · Reload" message appears.
