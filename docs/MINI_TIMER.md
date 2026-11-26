@@ -19,8 +19,11 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
   - Every gap is the same 4px. Heights never change when the window grows;
     a bigger window only adds task columns and visible rows.
 - **Two states** (owner's rule):
-  - **Interactive** while the mouse is over the mini window or the mini window
-    has focus: card, one row of tasks, ⌂ + 🔍 rail.
+  - **Interactive** while the mouse is over the mini window. Without the mouse
+    it stays interactive only while you use it from the keyboard (typing in the
+    search box, a form or menu open, or a key pressed since the mouse last
+    moved). Merely having clicked in it does not keep it open (owner reported
+    that as "stuck"). A missed "mouse left" event is caught within ~0.3 s.
   - **Widget** when the mouse is outside and the window is not focused:
     🔍 and the task list disappear and the timer card fills that space
     (full height, bigger clock). ⌂ and + stay.

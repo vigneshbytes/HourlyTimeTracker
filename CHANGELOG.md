@@ -5,6 +5,9 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.13.1 — Minor
+- Mini timer switches between interactive and widget instantly and no longer gets stuck: moving the mouse out switches to widget even after you clicked inside; it only stays open while you're typing, a form is open, or you're using the keyboard. A backup check catches a missed "mouse left" within about 0.3 s. The task list is no longer redrawn while hidden.
+
 ## 0.13.0 — Major
 - Mini timer opens at Chromium's smallest window size, 240 × 52, and everything fits inside it with no scrollbars: timer card (32px) and one row of tasks (16px) on the left; ⌂, + and 🔍 in an 18px rail on the right (14 + 4 + 14 + 4 + 16 = 52).
 - Two states: **interactive** while the mouse is over the mini timer or it has focus; **widget** otherwise, where 🔍 and the task list disappear and the timer card fills the window.

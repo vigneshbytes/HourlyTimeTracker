@@ -146,6 +146,9 @@ export function createMiniTimer(app) {
   let gridKey = '';
   let selIndex = 0;
   let hovered = false;
+  let kbd = false; // a key was pressed since the mouse last moved
+  let isInteractive = null;
+  let hoverCheck = null;
   let errorTimer = null;
 
   // ── DOM helpers bound to the mini window's document ──
@@ -196,13 +199,21 @@ export function createMiniTimer(app) {
     d.head.append(el('meta', { name: 'color-scheme', content: 'only light' }), el('style', {}, STYLES));
     build();
     cardKey = gridKey = '';
-    // Interactive while focused or hovered; widget otherwise.
-    win.addEventListener('focus', updateState);
-    win.addEventListener('blur', updateState);
-    d.addEventListener('mouseover', () => { if (!hovered) { hovered = true; updateState(); } });
-    d.documentElement.addEventListener('mouseleave', () => { hovered = false; updateState(); });
-    d.addEventListener('mouseout', (e) => { if (!e.relatedTarget) { hovered = false; updateState(); } });
-    win.addEventListener('pagehide', () => { win = null; d = null; panel = null; clearTimeout(errorTimer); app.onMiniChange?.(false); });
+    hovered = kbd = false; isInteractive = null;
+    // Interactive / widget state (see updateState). Several signals, because a
+    // fast exit can skip one of them; each one is cheap and returns early.
+    const root = d.documentElement;
+    root.addEventListener('pointerenter', () => setHovered(true));
+    root.addEventListener('pointerleave', () => setHovered(false));
+    d.addEventListener('pointerover', () => setHovered(true), { passive: true });
+    d.addEventListener('pointerout', (e) => { if (!e.relatedTarget) setHovered(false); }, { passive: true });
+    d.addEventListener('pointermove', () => { if (kbd) { kbd = false; updateState(); } setHovered(true); }, { passive: true });
+    d.addEventListener('keydown', () => { if (!kbd) { kbd = true; updateState(); } }, true);
+    d.addEventListener('focusin', updateState);
+    d.addEventListener('focusout', () => setTimeout(updateState));
+    win.addEventListener('focus', () => { if (!hovered) kbd = true; updateState(); });
+    win.addEventListener('blur', () => { kbd = false; updateState(); });
+    win.addEventListener('pagehide', () => { stopHoverCheck(); win = null; d = null; panel = null; clearTimeout(errorTimer); app.onMiniChange?.(false); });
     app.onMiniChange?.(true);
     updateState();
     tick();
@@ -210,12 +221,41 @@ export function createMiniTimer(app) {
 
   function close() { win?.close(); }
 
+  // Interactive while the mouse is over the window. Without the mouse, it stays
+  // interactive only when you are using it from the keyboard: typing in a box,
+  // a form / menu is open, or you pressed a key since the mouse last moved.
+  // Just having clicked in the window is not enough (that made it "stick").
   function updateState() {
     if (!d) return;
-    const interactive = hovered || d.hasFocus();
+    const focused = d.hasFocus();
+    const typing = focused && (d.activeElement?.tagName === 'INPUT' || !!panel);
+    const interactive = hovered || typing || (focused && kbd);
+    if (interactive === isInteractive) return;
+    isInteractive = interactive;
     d.body.classList.toggle('widget', !interactive);
     d.body.classList.toggle('interactive', interactive);
+    if (interactive) renderGrid(); // skipped while in widget state
   }
+
+  function setHovered(v) {
+    if (hovered === v) return;
+    hovered = v;
+    if (v) startHoverCheck(); else stopHoverCheck();
+    updateState();
+  }
+
+  // Safety net for a missed "mouse left" event: while hovered, ask the browser
+  // a few times a second whether the mouse is still over the page.
+  function startHoverCheck() {
+    if (hoverCheck) return;
+    let misses = 0;
+    hoverCheck = setInterval(() => {
+      if (!d) return stopHoverCheck();
+      misses = d.documentElement.matches(':hover') ? 0 : misses + 1;
+      if (misses >= 2) setHovered(false);
+    }, 150);
+  }
+  function stopHoverCheck() { clearInterval(hoverCheck); hoverCheck = null; }
 
   function build() {
     ui.co = el('span', { class: 'chip', role: 'button', tabindex: '0', hidden: true });
@@ -458,8 +498,8 @@ export function createMiniTimer(app) {
     if (panel) panel.close(null);
     return new Promise((resolve) => {
       const prevFocus = d.activeElement;
-      const p = { close: (v) => { if (panel !== p) return; panel = null; ui.panel.hidden = true; ui.card.hidden = false; ui.list.hidden = false; ui.panel.replaceChildren(); resolve(v); prevFocus?.focus?.(); } };
-      panel = p;
+      const p = { close: (v) => { if (panel !== p) return; panel = null; updateState(); ui.panel.hidden = true; ui.card.hidden = false; ui.list.hidden = false; ui.panel.replaceChildren(); resolve(v); prevFocus?.focus?.(); } };
+      panel = p; updateState();
       hideError();
       ui.panel.replaceChildren(...build(p.close));
       ui.card.hidden = true; ui.list.hidden = true; ui.panel.hidden = false;
@@ -555,7 +595,7 @@ export function createMiniTimer(app) {
   function tick() {
     if (!win || !d) return;
     renderCard();
-    renderGrid();
+    if (isInteractive) renderGrid();
   }
 
   return { open, close, tick, get isOpen() { return !!win; } };
