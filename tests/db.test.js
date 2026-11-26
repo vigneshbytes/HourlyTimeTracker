@@ -158,3 +158,30 @@ describe('backup and database export/import', () => {
     await expect(importDatabase(db, { format: 'hourlytimetracker-database', schemaVersion: 99, tables: {} })).rejects.toThrow(/newer/);
   });
 });
+
+describe('pause and resume', () => {
+  it('pausing ends the log; resuming starts a new log for the same task', async () => {
+    const { db, repo } = setup();
+    const a = await repo.createTask({ name: 'A' });
+    await repo.startTask(a.id);
+    advance(60000);
+    await repo.pause();
+    expect(await repo.getRunning()).toBeNull();
+    expect((await repo.loadAll()).paused.taskId).toBe(a.id);
+    advance(600000);
+    expect(await repo.resumePaused()).toBe(a.id);
+    const running = await repo.getRunning();
+    expect(running.taskId).toBe(a.id);
+    expect(await db.sessions.count()).toBe(2);
+    expect((await repo.loadAll()).paused).toBeNull();
+  });
+  it('archiving a paused task forgets the pause', async () => {
+    const { repo } = setup();
+    const a = await repo.createTask({ name: 'A' });
+    await repo.startTask(a.id);
+    advance(60000);
+    await repo.pause();
+    await repo.archiveTasks([a.id]);
+    expect(await repo.resumePaused()).toBeNull();
+  });
+});

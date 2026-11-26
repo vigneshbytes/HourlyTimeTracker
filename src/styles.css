@@ -304,3 +304,30 @@ html[data-mode=widget] .stat { padding: 4px 6px; }
 html[data-mode=widget] .stat-value { font-size: .85rem; }
 html[data-mode=widget] .stat-label { font-size: .65rem; }
 html[data-mode=widget] .intro-steps { font-size: .85rem; }
+
+/* ── Top-bar timer (shown away from the task list) ── */
+.topbar-status { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+.tb-link { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 5px 10px; border-radius: 99px; background: #e8f5ec; color: var(--fg); text-decoration: none; border: 1px solid #b9e0c4; }
+.tb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live); flex: none; animation: pulse 1.6s infinite; }
+.tb-name { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 32vw; }
+.tb-clock { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--live); }
+.tb-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 5px 12px; cursor: pointer; font-weight: 600; font-size: .85rem; flex: none; }
+.tb-btn:hover { border-color: #b8c2ce; }
+.topbar-status.is-paused .tb-link { background: #fff7e0; border-color: #f0d58a; }
+.topbar-status.is-paused .tb-dot { background: #c99700; animation: none; }
+.topbar-status.is-paused .tb-clock { color: #8a6500; }
+.topbar-status.is-paused .tb-btn { background: var(--live); border-color: var(--live); color: #fff; }
+html[data-mode=widget] .tb-name { max-width: 28vw; font-size: .8rem; }
+html[data-mode=widget] .tb-btn span { display: none; }
+html[data-mode=widget] .tb-btn { padding: 5px 8px; }
+html[data-mode=widget] .tb-link { padding: 3px 8px; gap: 5px; font-size: .8rem; }
+html[data-mode=touch] .tb-btn { min-height: 36px; }
+
+/* Resumed: a glow sweeps the running card. */
+.task-card.resumed { animation: resumed 1.5s ease-out; }
+@keyframes resumed {
+  0% { box-shadow: 0 0 0 0 rgb(26 127 55 / .55); transform: scale(.98); }
+  25% { transform: scale(1.01); }
+  60% { box-shadow: 0 0 0 14px rgb(26 127 55 / 0); transform: none; }
+  100% { box-shadow: 0 6px 20px rgb(31 111 235 / .18); }
+}

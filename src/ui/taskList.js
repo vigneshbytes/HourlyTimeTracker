@@ -123,6 +123,13 @@ export function createTaskListView(app) {
     li._task = task;
     const running = !!st.running;
     li.classList.toggle('is-running', running);
+    if (running && app.justResumed === task.id) {
+      app.justResumed = null;
+      li.classList.remove('resumed');
+      void li.offsetWidth; // restart the animation
+      li.classList.add('resumed');
+      setTimeout(() => li.classList.remove('resumed'), 1600);
+    }
     li.classList.toggle('is-red', st.color === 'red');
     li.classList.toggle('is-yellow', st.color === 'yellow');
     nameEl.textContent = task.name;

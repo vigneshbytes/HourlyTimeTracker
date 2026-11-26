@@ -19,6 +19,10 @@ your device.
   sessions under 5 s are discarded.
 - **Running task on top.** The running task's card grows and moves to the top
   with a big Stop button. The whole card is the stop button.
+- **Top-bar timer + pause.** On History and Settings the top bar shows the
+  running task's name and time, with the only Pause button. A paused task
+  resumes (as a new log) when you return to the task list, with a short
+  animation, or right away with Resume.
 - **Smart order.** Running task → tasks about to expire (soonest first) → most
   recently used.
 - **Colours.** Red when a task is about to expire or has expired (it moves up).

@@ -48,6 +48,8 @@ function route() {
   }
   renderChrome();
   app.view.render();
+  if (key === 'tasks') resumeIfPaused().catch(() => {});
+  tick();
 }
 
 // ── Header (adapts to desktop / touch / widget) ─────────────────────────────
@@ -75,17 +77,44 @@ function renderChrome() {
   }
 }
 
-// ── Live clock ─────────────────────────────────────────────────────────────
+// ── Live clock + top-bar timer ─────────────────────────────────────────────
+// Away from the task list, the top bar shows the running task's name and time,
+// with the only Pause button. A paused task resumes when you return home.
+const bar = {
+  name: h('span', { class: 'tb-name' }),
+  clock: h('span', { class: 'tb-clock' }),
+  btn: h('button', { type: 'button', class: 'tb-btn' }),
+};
+bar.link = h('a', { href: '#/', class: 'tb-link', title: 'Back to tasks' }, h('span', { class: 'tb-dot', 'aria-hidden': 'true' }), bar.name, bar.clock);
+bar.btn.addEventListener('click', async () => {
+  if (app.running()) {
+    await app.repo.pause();
+    toast('Paused. Tracking resumes when you go back to the task list.', { action: 'Resume now', onAction: () => resumeIfPaused() });
+  } else {
+    await resumeIfPaused();
+  }
+});
+
+async function resumeIfPaused() {
+  if (!app.data.paused) return;
+  app.justResumed = app.data.paused.taskId;
+  const id = await app.repo.resumePaused();
+  if (!id) { app.justResumed = null; return; }
+  const t = app.data.tasks.find((x) => x.id === id);
+  toast(`Resumed ${t?.name ?? 'task'}`);
+}
+
 let lastStatsAt = 0;
 function tick() {
   const running = app.running();
   const status = $('#topbar-status');
+  const onHome = app.viewKey === 'tasks';
+  const paused = !running && app.data.paused;
+  if (!status.contains(bar.link)) status.replaceChildren(bar.link, bar.btn);
   if (running) {
     const task = app.data.tasks.find((t) => t.id === running.taskId);
     const clock = fmtClock(sessionDuration(running));
     document.title = `${clock} · ${task?.name ?? ''}`;
-    status.textContent = app.viewKey === 'tasks' ? '' : `● ${clock}`;
-    status.onclick = () => app.navigate('#/');
     // Running totals anywhere on screen.
     const st = app.stats.get(running.taskId);
     if (st) {
@@ -93,11 +122,19 @@ function tick() {
       document.querySelectorAll(`.js-total[data-task="${CSS.escape(running.taskId)}"]`).forEach((el) => { el.textContent = fmtDuration(other + sessionDuration(running)); });
     }
     document.querySelectorAll('.js-session-timer-detail').forEach((el) => { el.textContent = fmtDuration(sessionDuration(running)); });
-    // Colours depend on elapsed time; refresh them every 30 s while running.
     if (Date.now() - lastStatsAt > 30000) { lastStatsAt = Date.now(); recompute(); app.view?.render(); }
   } else {
     document.title = 'TimeTracker';
-    status.textContent = '';
+  }
+  status.hidden = onHome || !(running || paused);
+  status.classList.toggle('is-paused', !!paused);
+  if (!status.hidden) {
+    const taskId = running ? running.taskId : paused.taskId;
+    const task = app.data.tasks.find((t) => t.id === taskId);
+    bar.name.textContent = task?.name ?? '';
+    bar.clock.textContent = running ? fmtClock(sessionDuration(running)) : 'Paused';
+    bar.btn.replaceChildren(svgIcon(running ? 'pause' : 'play', 16), h('span', null, running ? 'Pause' : 'Resume'));
+    bar.btn.setAttribute('aria-label', running ? `Pause ${task?.name ?? ''}` : `Resume ${task?.name ?? ''}`);
   }
   app.view?.tick();
 }

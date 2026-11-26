@@ -47,8 +47,8 @@ export function createRepo(db, now = () => Date.now()) {
     },
 
     async loadAll() {
-      const [tasks, sessions, settings] = await Promise.all([db.tasks.toArray(), db.sessions.toArray(), this.getSettings()]);
-      return { tasks: tasks.map(normalizeTask), sessions: sessions.map(normalizeSession), settings };
+      const [tasks, sessions, settings, paused] = await Promise.all([db.tasks.toArray(), db.sessions.toArray(), this.getSettings(), db.meta.get('paused')]);
+      return { tasks: tasks.map(normalizeTask), sessions: sessions.map(normalizeSession), settings, paused: paused?.value ?? null };
     },
 
     getRunning,
@@ -69,7 +69,8 @@ export function createRepo(db, now = () => Date.now()) {
 
     // Starts timing a task, stopping whatever was running. Returns info for Undo.
     async startTask(taskId) {
-      return db.transaction('rw', db.tasks, db.sessions, async () => {
+      return db.transaction('rw', db.tasks, db.sessions, db.meta, async () => {
+        await db.meta.delete('paused');
         const t = now();
         const task = await db.tasks.get(taskId);
         if (!task) throw new Error('Task not found');
@@ -129,9 +130,11 @@ export function createRepo(db, now = () => Date.now()) {
     async deleteSession(id) { await db.sessions.delete(id); },
 
     async archiveTasks(ids) {
-      await db.transaction('rw', db.tasks, db.sessions, async () => {
+      await db.transaction('rw', db.tasks, db.sessions, db.meta, async () => {
         const running = await db.sessions.where('running').equals(1).first();
         if (running && ids.includes(running.taskId)) await stopRunningInTx(now());
+        const paused = (await db.meta.get('paused'))?.value;
+        if (paused && ids.includes(paused.taskId)) await db.meta.delete('paused');
         const t = now();
         for (const id of ids) await db.tasks.update(id, stamp({ status: 'archived', archivedAt: t }));
       });
@@ -150,6 +153,31 @@ export function createRepo(db, now = () => Date.now()) {
         await db.tasks.delete(id);
       });
     },
+
+    // Pause = end the current log and remember the task, so it can resume
+    // (as a new log) later. The time in between is not counted.
+    async pause() {
+      return db.transaction('rw', db.tasks, db.sessions, db.meta, async () => {
+        const running = await db.sessions.where('running').equals(1).first();
+        if (!running) return null;
+        const t = now();
+        const stopped = await stopRunningInTx(t);
+        await db.meta.put({ key: 'paused', value: { taskId: running.taskId, pausedAt: t } });
+        return stopped;
+      });
+    },
+
+    // Resumes the paused task. Returns its id, or null if nothing to resume.
+    async resumePaused() {
+      const paused = (await db.meta.get('paused'))?.value;
+      if (!paused) return null;
+      const task = await db.tasks.get(paused.taskId);
+      if (!task || task.status !== 'active') { await db.meta.delete('paused'); return null; }
+      await this.startTask(paused.taskId);
+      return paused.taskId;
+    },
+
+    async clearPaused() { await db.meta.delete('paused'); },
 
     async eraseAll() {
       await db.transaction('rw', db.tasks, db.sessions, db.meta, async () => {

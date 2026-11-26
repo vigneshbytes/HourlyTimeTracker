@@ -31,6 +31,7 @@ export function svgIcon(name, size = 20) {
     menu: 'M4 6h16M4 12h16M4 18h16',
     stop: 'M7 7h10v10H7z',
     play: 'M8 5l11 7-11 7z',
+    pause: 'M7 5h3v14H7zM14 5h3v14h-3z',
     search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3',
     archive: 'M3 4h18v4H3zM5 8v12h14V8M10 12h4',
     edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z',
@@ -48,7 +49,7 @@ export function svgIcon(name, size = 20) {
   svg.setAttribute('class', `icon icon-${name}`);
   const p = document.createElementNS(ns, 'path');
   p.setAttribute('d', paths[name]);
-  if (name === 'stop' || name === 'play') p.setAttribute('fill', 'currentColor');
+  if (name === 'stop' || name === 'play' || name === 'pause') p.setAttribute('fill', 'currentColor');
   svg.append(p);
   return svg;
 }
