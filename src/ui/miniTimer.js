@@ -55,7 +55,7 @@ button { cursor: pointer; }
 
 /* Rail: ⌂ and + level with the card, 🔍 level with the task list */
 .rail { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: var(--gap); }
-.ibtn { flex: none; width: var(--rail); height: var(--icon); display: grid; place-items: center; border: 1px solid #dfe4ea; border-radius: 4px; background: #fff; color: #4b5563; padding: 0; transition: background .15s, color .15s, border-color .15s; }
+.ibtn { flex: none; width: var(--rail); height: var(--icon); display: grid; place-items: center; border: 1px solid #dfe4ea; border-radius: 4px; background: #fff; color: #4b5563; padding: 0; }
 .ibtn:hover, .ibtn[aria-pressed=true] { color: #1a56db; border-color: #b9cdf5; background: #eaf1fe; }
 .ibtn.add { color: #fff; background: #1a56db; border-color: #1a56db; }
 .ibtn.add:hover { background: #1747b8; color: #fff; }
@@ -75,8 +75,7 @@ body.searching .list { grid-row: 1 / 3; }
 .card .name { font-weight: 650; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .card .meta { color: #6b7280; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .card .big { grid-column: 1; font-weight: 750; font-size: clamp(15px, calc((100cqh - 14px) * .9), 64px); line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; display: flex; align-items: center; gap: 4px; white-space: nowrap; min-width: 0; overflow: hidden; }
-.dot { width: .32em; height: .32em; max-width: 8px; max-height: 8px; border-radius: 50%; background: #16a34a; flex: none; animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .35; } }
+.dot { width: .32em; height: .32em; max-width: 8px; max-height: 8px; border-radius: 50%; background: #16a34a; flex: none; }
 .card .act { grid-column: 2; grid-row: 1 / 3; display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 7px; border-radius: 5px; font-weight: 700; color: #fff; background: #c62828; white-space: nowrap; }
 .card.running:hover { border-color: #c62828; }
 .card.running:hover .act { background: #a91f1f; }
@@ -96,7 +95,7 @@ body.searching .list { grid-row: 1 / 3; }
 .search { flex: none; width: 100%; height: var(--row); border: 1px solid #b9cdf5; border-radius: 4px; padding: 0 5px; background: #fff; font-size: 10.5px; }
 .grid-wrap { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100px, calc(50% - 2px)), 1fr)); grid-auto-rows: var(--row); gap: var(--gap); }
-.tile { position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 4px; border: 1px solid #e2e7ee; border-radius: 4px; background: #fff; text-align: left; overflow: hidden; cursor: pointer; transition: border-color .15s, background .15s; }
+.tile { position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 4px; border: 1px solid #e2e7ee; border-radius: 4px; background: #fff; text-align: left; overflow: hidden; cursor: pointer; }
 .tile:hover, .tile.sel { border-color: #1a56db; background: #f3f8ff; }
 .tile .t1 { flex: 1; min-width: 0; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile .t2 { flex: none; font-size: 10px; color: #6b7280; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -129,10 +128,14 @@ body.searching .list { grid-row: 1 / 3; }
 .bar .btn { background: transparent; color: #fff; border-color: rgb(255 255 255 / .35); }
 
 /* Widget state: only the timer card (with ⌂ and +); it takes the cleared space */
-body.widget .list, body.widget .find, body.widget .panel, body.widget .bar { display: none !important; }
-body.widget .card { display: grid !important; grid-row: 1 / 3; }
+/* Widget state = neither hovered nor focused. Pure CSS, so it switches the
+   instant the cursor leaves or enters. */
+html:not(:hover) body:not(.focused) :is(.list, .find, .panel, .bar) { display: none !important; }
+html:not(:hover) body:not(.focused) .card { display: grid !important; grid-row: 1 / 3; }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* No transitions or animations anywhere in the mini timer: nothing eases in or
+   out when the state switches. */
+*, *::before, *::after { transition: none !important; animation: none !important; }
 `;
 
 export function createMiniTimer(app) {
@@ -145,10 +148,6 @@ export function createMiniTimer(app) {
   let cardKey = '';
   let gridKey = '';
   let selIndex = 0;
-  let hovered = false;
-  let kbd = false; // a key was pressed since the mouse last moved
-  let isInteractive = null;
-  let hoverCheck = null;
   let errorTimer = null;
 
   // ── DOM helpers bound to the mini window's document ──
@@ -199,21 +198,13 @@ export function createMiniTimer(app) {
     d.head.append(el('meta', { name: 'color-scheme', content: 'only light' }), el('style', {}, STYLES));
     build();
     cardKey = gridKey = '';
-    hovered = kbd = false; isInteractive = null;
-    // Interactive / widget state (see updateState). Several signals, because a
-    // fast exit can skip one of them; each one is cheap and returns early.
-    const root = d.documentElement;
-    root.addEventListener('pointerenter', () => setHovered(true));
-    root.addEventListener('pointerleave', () => setHovered(false));
-    d.addEventListener('pointerover', () => setHovered(true), { passive: true });
-    d.addEventListener('pointerout', (e) => { if (!e.relatedTarget) setHovered(false); }, { passive: true });
-    d.addEventListener('pointermove', () => { if (kbd) { kbd = false; updateState(); } setHovered(true); }, { passive: true });
-    d.addEventListener('keydown', () => { if (!kbd) { kbd = true; updateState(); } }, true);
+    // Interactive / widget state. Hover is pure CSS (html:hover), which the
+    // browser updates on the same frame the mouse crosses the window edge, with
+    // no script in between. Focus ("the mini window is selected") is a class.
+    win.addEventListener('focus', updateState);
+    win.addEventListener('blur', updateState);
     d.addEventListener('focusin', updateState);
-    d.addEventListener('focusout', () => setTimeout(updateState));
-    win.addEventListener('focus', () => { if (!hovered) kbd = true; updateState(); });
-    win.addEventListener('blur', () => { kbd = false; updateState(); });
-    win.addEventListener('pagehide', () => { stopHoverCheck(); win = null; d = null; panel = null; clearTimeout(errorTimer); app.onMiniChange?.(false); });
+    win.addEventListener('pagehide', () => { win = null; d = null; panel = null; clearTimeout(errorTimer); app.onMiniChange?.(false); });
     app.onMiniChange?.(true);
     updateState();
     tick();
@@ -221,41 +212,11 @@ export function createMiniTimer(app) {
 
   function close() { win?.close(); }
 
-  // Interactive while the mouse is over the window. Without the mouse, it stays
-  // interactive only when you are using it from the keyboard: typing in a box,
-  // a form / menu is open, or you pressed a key since the mouse last moved.
-  // Just having clicked in the window is not enough (that made it "stick").
+  // Owner's rule: interactive when the mini window is selected (focused) OR
+  // the cursor is over it; widget when neither. The hover half lives in CSS.
   function updateState() {
-    if (!d) return;
-    const focused = d.hasFocus();
-    const typing = focused && (d.activeElement?.tagName === 'INPUT' || !!panel);
-    const interactive = hovered || typing || (focused && kbd);
-    if (interactive === isInteractive) return;
-    isInteractive = interactive;
-    d.body.classList.toggle('widget', !interactive);
-    d.body.classList.toggle('interactive', interactive);
-    if (interactive) renderGrid(); // skipped while in widget state
+    if (d) d.body.classList.toggle('focused', d.hasFocus());
   }
-
-  function setHovered(v) {
-    if (hovered === v) return;
-    hovered = v;
-    if (v) startHoverCheck(); else stopHoverCheck();
-    updateState();
-  }
-
-  // Safety net for a missed "mouse left" event: while hovered, ask the browser
-  // a few times a second whether the mouse is still over the page.
-  function startHoverCheck() {
-    if (hoverCheck) return;
-    let misses = 0;
-    hoverCheck = setInterval(() => {
-      if (!d) return stopHoverCheck();
-      misses = d.documentElement.matches(':hover') ? 0 : misses + 1;
-      if (misses >= 2) setHovered(false);
-    }, 150);
-  }
-  function stopHoverCheck() { clearInterval(hoverCheck); hoverCheck = null; }
 
   function build() {
     ui.co = el('span', { class: 'chip', role: 'button', tabindex: '0', hidden: true });
@@ -595,7 +556,7 @@ export function createMiniTimer(app) {
   function tick() {
     if (!win || !d) return;
     renderCard();
-    if (isInteractive) renderGrid();
+    renderGrid();
   }
 
   return { open, close, tick, get isOpen() { return !!win; } };

@@ -5,6 +5,10 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.13.2 — Minor
+- Mini timer back to the owner's rule: interactive when the mini window is selected or the cursor is over it, widget when neither.
+- Snappier switching: hover is now handled by the browser's own CSS hover state, so the view changes on the very next frame the cursor crosses the edge (no script, no missed events). All transitions and animations (hover colour fades, pulsing dot) are removed from the mini timer.
+
 ## 0.13.1 — Minor
 - Mini timer switches between interactive and widget instantly and no longer gets stuck: moving the mouse out switches to widget even after you clicked inside; it only stays open while you're typing, a form is open, or you're using the keyboard. A backup check catches a missed "mouse left" within about 0.3 s. The task list is no longer redrawn while hidden.
 
