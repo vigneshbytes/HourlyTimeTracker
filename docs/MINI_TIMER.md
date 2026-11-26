@@ -10,11 +10,16 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
   `chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc`).
   The owner's Vivaldi screenshot of the smallest window, minus 20% (125%
   screen scaling), lands on about the same size.
-- **Launch size:** X × Y until the user resizes the window; after that, the
-  last size they left it at (Chromium reuses it while the browser is open; we
-  also save it in localStorage `htt.miniSize` so it survives restarts). Do not
-  pass `preferInitialWindowPlacement` (it would discard the user's size).
-  Websites cannot choose the window's position.
+- **Launch size: as small as the browser allows.** Chromium browsers differ, so
+  the mini timer asks for 20% less than 240 × 52 (192 × 42); each browser
+  clamps that up to its own minimum. It then measures the real size and fits
+  the fixed heights to it (`miniLayout(minH)`, kept within ±20% of 52; the
+  three rail icons + two gaps always equal the height). The measured minimum is
+  saved per browser (localStorage `htt.miniMin`).
+- If the user resizes the window, that size is used next time
+  (`htt.miniUserSize`); shrinking it back to the minimum returns to the default.
+  `preferInitialWindowPlacement: true` is always passed so Chromium never
+  reuses an old size on its own (side effect: the browser picks the position).
 - **Opens automatically when a task starts** from a click in the full app
   (start, switch, create-and-start, resume). Browsers only allow opening it
   right after a click or key press, so it can't open on page load or browser

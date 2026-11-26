@@ -24,13 +24,24 @@ import { createActions } from './actions.js';
 
 export const miniSupported = () => 'documentPictureInPicture' in window;
 
-export const X = 240;                       // Chromium's minimum inner width
+export const X = 240;                       // Chromium's minimum inner width (kMinWindowSize)
 export const Y = 52;                        // Chromium's minimum inner height
+export const TOL = 0.2;                     // other Chromium browsers: accept a minimum within ±20%
 export const GAP = 4;
-export const H1 = ((Y - GAP) * 2) / 3;      // 32: timer card = ⌂ + gap + +
-export const ICON = (H1 - GAP) / 2;         // 14: ⌂ and +
-export const ROW = H1 / 2;                  // 16: 🔍, search box, task rows
-export const RAIL = 18;                     // rail width; card width = X − GAP − RAIL
+export const RAIL = 18;                     // rail width; card width = window width − GAP − RAIL
+
+// Fixed heights for a window whose smallest height is minH (measured in the
+// browser being used, kept within ±20% of Y). The three rail icons + two gaps
+// fill it exactly: ⌂ + gap + + = card (H1), 🔍 = task row ≈ H1 / 2.
+// At Y = 52: ⌂ = + = 14, card 32, 🔍 / rows 16.
+export function miniLayout(minH = Y) {
+  const y = Math.round(Math.min(Y * (1 + TOL), Math.max(Y * (1 - TOL), Number(minH) || Y)));
+  const icon = Math.round((y - 2.5 * GAP) / 3);
+  const h1 = 2 * icon + GAP;
+  const row = y - h1 - GAP;
+  return { y, icon, h1, row };
+}
+const { icon: ICON, h1: H1, row: ROW } = miniLayout(Y);
 
 const PATHS = {
   stop: 'M7 7h10v10H7z',
@@ -190,44 +201,70 @@ export function createMiniTimer(app) {
   };
   let actions = null; // created on open(), once the database is ready
 
-  // Launch size: Chromium's minimum (X × Y) until you resize the window; after
-  // that, the size you last left it at. Chromium itself also reuses the last
-  // size while the browser is open; saving it here keeps it across restarts.
-  const SIZE_KEY = 'htt.miniSize';
-  function launchSize() {
-    try {
-      const { width, height } = JSON.parse(localStorage.getItem(SIZE_KEY)) || {};
-      if (width >= X && height >= Y) return { width, height };
-    } catch { /* no saved size */ }
-    return { width: X, height: Y };
+  // ── Launch size ──
+  // Always ask for 20% less than Chromium's minimum: every Chromium browser
+  // clamps the request up to its own smallest size, so the window opens as
+  // small as that browser allows. We then measure that size and fit the
+  // layout to it. If you resize the window yourself, that size is used next
+  // time instead. preferInitialWindowPlacement stops Chromium from reusing an
+  // old size on its own (it also means the browser picks the position).
+  const MIN_KEY = 'htt.miniMin';      // { ua, width, height }: this browser's smallest size
+  const USER_KEY = 'htt.miniUserSize'; // { width, height }: a size you resized it to
+  try { localStorage.removeItem('htt.miniSize'); } catch { /* v0.14.0 key: could hold a size you never chose */ }
+  const readJson = (k) => { try { return JSON.parse(localStorage.getItem(k)) || null; } catch { return null; } };
+  const writeJson = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage blocked */ } };
+  const knownMin = () => { const m = readJson(MIN_KEY); return m && m.ua === navigator.userAgent ? m : null; };
+
+  function launchRequest() {
+    const user = readJson(USER_KEY);
+    const min = knownMin();
+    const base = { preferInitialWindowPlacement: true };
+    if (user && min && (user.width > min.width * (1 + TOL / 4) || user.height > min.height * (1 + TOL / 4))) {
+      return { ...base, width: Math.round(user.width), height: Math.round(user.height), userSize: true };
+    }
+    return { ...base, width: Math.round(X * (1 - TOL)), height: Math.round(Y * (1 - TOL)), userSize: false };
   }
+
+  function applyLayout(minH) {
+    const L = miniLayout(minH);
+    const s = d.documentElement.style;
+    s.setProperty('--h1', `${L.h1}px`); s.setProperty('--icon', `${L.icon}px`); s.setProperty('--row', `${L.row}px`);
+  }
+
+  let openedAt = 0;
   let sizeTimer = null;
-  function rememberSize() {
+  function onResize() {
+    // Resizes in the first moments are the browser settling the window, not you.
+    if (Date.now() - openedAt < 1000) return;
     clearTimeout(sizeTimer);
-    sizeTimer = setTimeout(() => {
-      if (!win) return;
-      const width = Math.max(X, win.innerWidth), height = Math.max(Y, win.innerHeight);
-      try { localStorage.setItem(SIZE_KEY, JSON.stringify({ width, height })); } catch { /* storage full or blocked */ }
-    }, 400);
+    sizeTimer = setTimeout(() => { if (win) writeJson(USER_KEY, { width: win.innerWidth, height: win.innerHeight }); }, 400);
   }
 
   async function open() {
     if (win) { win.focus?.(); return; }
     actions ??= createActions(app, miniUi);
-    win = await window.documentPictureInPicture.requestWindow(launchSize());
+    const { userSize, ...request } = launchRequest();
+    win = await window.documentPictureInPicture.requestWindow(request);
+    openedAt = Date.now();
     d = win.document;
     d.title = 'TimeTracker';
     d.head.append(el('meta', { name: 'color-scheme', content: 'only light' }), el('style', {}, STYLES));
     build();
     cardKey = gridKey = '';
+    if (!userSize) {
+      // Opened at the smallest size this browser allows: measure it.
+      await new Promise((r) => win.requestAnimationFrame(() => r()));
+      writeJson(MIN_KEY, { ua: navigator.userAgent, width: win.innerWidth, height: win.innerHeight });
+    }
+    applyLayout(knownMin()?.height ?? Y);
     // Interactive / widget state. Hover is pure CSS (html:hover), which the
     // browser updates on the same frame the mouse crosses the window edge, with
     // no script in between. Focus ("the mini window is selected") is a class.
-    win.addEventListener('resize', rememberSize);
+    win.addEventListener('resize', onResize);
     win.addEventListener('focus', updateState);
     win.addEventListener('blur', updateState);
     d.addEventListener('focusin', updateState);
-    win.addEventListener('pagehide', () => { win = null; d = null; panel = null; clearTimeout(errorTimer); app.onMiniChange?.(false); });
+    win.addEventListener('pagehide', () => { win = null; d = null; panel = null; clearTimeout(errorTimer); clearTimeout(sizeTimer); app.onMiniChange?.(false); });
     app.onMiniChange?.(true);
     updateState();
     tick();

@@ -5,6 +5,9 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.14.1 — Minor
+- Mini timer now opens at the smallest size the browser allows: it asks for 20% under Chromium's 240 × 52, the browser clamps that up to its own minimum, and the layout fits itself to the measured size (within ±20%). A size you resize it to is still remembered. Fixes the mini timer opening large because the browser reused an old window size.
+
 ## 0.14.0 — Major
 - Mini timer opens by itself when you start a task in the full app (start, switch, create-and-start or resume).
 - Mini timer stays interactive (tasks and 🔍 visible) whenever nothing is running; widget state only happens while a session runs.
