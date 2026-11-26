@@ -5,6 +5,9 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.10.0 — Major
+- Mini timer: a tiny always-on-top window (Document Picture-in-Picture, Chromium browsers on a computer) that can be shrunk far below the browser's ~500px minimum window width. Running: task name, timer, Stop. Paused: Resume. Idle: the time, today's total and a one-tap start of your last task. Buttons turn icon-only when it's very narrow. Open it with the ↗ header button (or ☰ → Mini timer in a small window).
+
 ## 0.9.1 — Minor
 - Small window: the + (new task) and History buttons are always in the header again; the ☰ menu keeps Tasks and Settings.
 - Very narrow windows: the top-bar timer keeps its digits visible (task name and streak step aside).
