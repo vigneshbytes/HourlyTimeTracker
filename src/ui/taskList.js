@@ -1,7 +1,7 @@
 import { h, svgIcon } from './dom.js';
 import { openMenu, attachLongPress } from './menu.js';
 import { sortMainList, sessionDuration } from '../logic/tasks.js';
-import { fmtClock, fmtDuration, fmtHours, fmtTime, relativeExpiry } from '../logic/time.js';
+import { fmtClock, fmtDuration, fmtHours, fmtTime, relativeExpiry, shortDate } from '../logic/time.js';
 import { overviewStats } from '../logic/stats.js';
 import { fetchQuote } from '../logic/quotes.js';
 import { howToSteps } from './help.js';
@@ -43,7 +43,36 @@ export function createTaskListView(app) {
     const q = await fetchQuote();
     quoteText.textContent = q.text;
     quoteWho.textContent = q.author;
+    fitQuote();
     quoteEl.classList.add('show');
+  }
+
+  // Shrink the quote text step by step until it fits the space the card has left for it.
+  // Only the quote changes size; the card height is fixed, so nothing else moves.
+  // If even the smallest size can't fit, the last visible line ends with "…".
+  function fitQuote() {
+    if (!quoteEl.isConnected || quoteEl.clientHeight === 0) return;
+    quoteText.classList.remove('clamped');
+    let scale = 1;
+    quoteText.style.setProperty('--q-scale', scale);
+    while (quoteEl.scrollHeight > quoteEl.clientHeight + 1 && scale > 0.72) {
+      scale = Math.round((scale - 0.04) * 100) / 100;
+      quoteText.style.setProperty('--q-scale', scale);
+    }
+    if (quoteEl.scrollHeight > quoteEl.clientHeight + 1) {
+      const lh = parseFloat(getComputedStyle(quoteText).lineHeight) || 20;
+      const room = quoteEl.clientHeight - (quoteEl.scrollHeight - quoteText.offsetHeight);
+      quoteText.style.setProperty('--q-lines', Math.max(1, Math.floor(room / lh)));
+      quoteText.classList.add('clamped');
+    }
+  }
+  if ('ResizeObserver' in window) {
+    let lastW = 0, lastH = 0;
+    new ResizeObserver(([e]) => {
+      const { width, height } = e.contentRect;
+      if (Math.abs(width - lastW) < 1 && Math.abs(height - lastH) < 1) return;
+      lastW = width; lastH = height; fitQuote();
+    }).observe(quoteEl);
   }
 
   const greeting = () => {
@@ -93,7 +122,7 @@ export function createTaskListView(app) {
     clockKey = key;
     timeEl.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
     timeEl.dateTime = now.toISOString();
-    dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    dateEl.textContent = shortDate(now);
     greetEl.textContent = greeting();
   }
 

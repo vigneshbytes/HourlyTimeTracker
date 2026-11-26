@@ -298,7 +298,7 @@ html[data-mode=widget] .toast { font-size: .85rem; bottom: 8px; }
 .q-who { margin: 0; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
 .q-who::before { content: '— '; }
 .create-only-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #fff7e0; border: 1px solid #f0d58a; color: #5c4400; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: .88rem; }
-@media (max-width: 520px) { .stat { padding: 0 4px; } .stat-value { font-size: 1.05rem; } .stat-label { font-size: .58rem; letter-spacing: .04em; } .q-text { -webkit-line-clamp: 2; font-size: 1rem; } .idle-greet { font-size: 1.15rem; } .howto { font-size: .92rem; gap: 5px; } .intro-foot { gap: 6px; } }
+@media (max-width: 520px) { .stat { padding: 0 4px; } .stat-value { font-size: 1.05rem; } .stat-label { font-size: .58rem; letter-spacing: .04em; } .idle-panel { padding: 14px 14px; } .idle-quote { padding-left: 4px; padding-right: 4px; } .q-text { --q-base: 1rem; } .idle-greet { font-size: 1.15rem; } .howto { font-size: .92rem; gap: 5px; } .intro-foot { gap: 6px; } }
 html[data-mode=widget] .idle-panel { padding: 8px 10px; gap: 4px; margin-bottom: 6px; }
 html[data-mode=widget] .idle-greet { font-size: 1rem; }
 html[data-mode=widget] .idle-quote, html[data-mode=widget] .idle-hint { display: none; }
@@ -387,11 +387,15 @@ main:has(> .view-history) { max-width: 1040px; }
 @media (max-width: 380px) { :root { --slot-h: 330px; } }
 html[data-mode=widget] { --slot-h: 128px; }
 .idle-panel, .task-card.is-running { height: var(--slot-h); overflow: hidden; }
-.idle-panel { grid-template-rows: auto auto auto 1fr; align-content: start; }
+.idle-panel { grid-template-rows: auto auto minmax(0, 1fr); align-content: stretch; }
 .idle-panel.intro { grid-template-rows: auto 1fr auto; }
 .task-card.is-running .task-main { height: 100%; align-content: center; }
-.idle-quote { align-self: center; }
-.q-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.idle-quote { align-self: stretch; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; margin-top: 0; padding-top: 22px; }
+.idle-quote::before { top: 0; font-size: 2.6rem; }
+/* The quote shrinks its own text to fit the space left in the fixed-size card (see fitQuote in taskList.js),
+   so a long quote never pushes the stats, the card or the list. */
+.q-text { --q-base: 1.08rem; font-size: calc(var(--q-base) * var(--q-scale, 1)); margin: 4px 0 4px; }
+.q-text.clamped { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: var(--q-lines, 3); }
 html[data-mode=widget] .task-card.is-running .task-meta, html[data-mode=widget] .task-card.is-running .progress { display: none; }
 html[data-mode=widget] .task-card.is-running .task-main { gap: 2px; padding-top: 6px; padding-bottom: 6px; }
 

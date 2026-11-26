@@ -90,3 +90,14 @@ export function relativeExpiry(t, now = Date.now()) {
   if (d === 1) return 'Expires tomorrow';
   return `Expires in ${d} days`;
 }
+
+/** "Thursday, 26 Nov" in the device's own language and order: no year, 3-letter month. */
+export function shortDate(d = new Date(), locale) {
+  const parts = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'short' }).formatToParts(d);
+  return parts.map((p, i) => {
+    if (p.type === 'literal' && p.value === ' ' && parts[i - 1]?.type === 'weekday') return ', '; // "Thursday, 26 Nov"
+    if (p.type !== 'month') return p.value;
+    const m = p.value.replace(/\.$/, '');
+    return /^[A-Za-z]+$/.test(m) ? m.slice(0, 3) : p.value; // e.g. "Sept" -> "Sep" in British English
+  }).join('');
+}

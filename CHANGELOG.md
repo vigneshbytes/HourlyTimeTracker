@@ -5,6 +5,10 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.8.1 — Minor
+- Idle card date: no year, 3-letter month (e.g. "Thursday, Nov 26" or "Thursday, 26 Nov", following the device's language).
+- Quotes are no longer cut off on phones. The quote uses all the free space in the card and its text shrinks slightly if needed, so a long quote never changes the card size or moves anything around it.
+
 ## 0.8.0 — Major
 - Starting a task: the card slides from its place in the list up into the top slot and grows into the expanded running view, while the other cards glide into their new places and the idle panel fades away (one 0.46 s motion). Stopping plays it in reverse.
 - New tasks drop into the list; the timer and Stop fade in once the card has landed.

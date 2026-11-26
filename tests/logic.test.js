@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseHours, parseExpiry, fmtDuration, fmtClock } from '../src/logic/time.js';
+import { parseHours, parseExpiry, fmtDuration, fmtClock, shortDate } from '../src/logic/time.js';
 import { buildStats, sortMainList, rangeIds, filterHistory, sortOldestActivity } from '../src/logic/tasks.js';
 import { normalizeTask, SETTINGS_DEFAULTS } from '../src/db/records.js';
 
@@ -62,5 +62,14 @@ describe('sorting and colours', () => {
   });
   it('shift-click range selection', () => {
     expect(rangeIds(['a', 'b', 'c', 'd'], 'd', 'b')).toEqual(['b', 'c', 'd']);
+  });
+});
+
+describe('shortDate', () => {
+  it('drops the year and uses a 3-letter month', () => {
+    const d = new Date(2026, 8, 24); // 24 Sep 2026
+    expect(shortDate(d, 'en-GB')).toBe('Thursday, 24 Sep');
+    expect(shortDate(d, 'en-US')).toBe('Thursday, Sep 24');
+    expect(shortDate(d, 'en-GB')).not.toMatch(/2026/);
   });
 });
