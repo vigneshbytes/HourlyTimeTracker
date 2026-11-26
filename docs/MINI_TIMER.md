@@ -5,35 +5,41 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
 
 ## Size rules (decided with the project owner — keep them)
 
-- Chromium lets this window shrink to about **240 × 52** CSS px (measured from
-  a Vivaldi screenshot: 300 × 62 screen px at 125% scaling). That is too small.
-- **Fixed heights (owner's rule):** nothing changes height when the window is
-  resized, larger or smaller; only widths stretch.
-  - Main (timer) card = **H1 = 60px**.
-  - ⌂ and + stacked = H1 (two 28px icons + one 4px gap), level with the card.
-  - 🔍 = **H1 / 2 = 30px**; the search box and every task row are also 30px.
-  - Every gap is the same 4px (between ⌂, + and 🔍, and everywhere else).
-- The mini timer enforces a minimum of **240 × 136** (`MIN_W` × `MIN_H`):
-  4 + card 60 + 4 + two task rows (30 + 4 + 30) + 4. Text stays legible
-  (11px task names, 10px secondary text).
-  (History: 240 × 156 with a top bar, then 240 × 128 before the fixed heights.)
-- **No top bar.** A slim rail on the right holds, top to bottom: ⌂ Home, + New
-  task (these two level with the card), then 🔍 Search level with the first
-  task row. The search box opens in that row, beside 🔍.
+- **X × Y = 240 × 52 CSS px**: Chromium's own minimum for this window
+  (`kMinWindowSize(240, 52)` in
+  `chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc`).
+  The owner's Vivaldi screenshot of the smallest window, minus 20% (125%
+  screen scaling), lands on about the same size. The window opens at X × Y.
+- **Everything fits inside X × Y** with no visible scrollbar (lists scroll with
+  the wheel, arrows or touch, but scrollbars are hidden).
+  - Horizontally: timer card + 4px gap + rail (18px) = X.
+  - Vertically: ⌂ (14) + 4 + + (14) + 4 + 🔍 (16) = Y.
+  - Card = **H1 = 32px** = ⌂ + gap + + (level with the card).
+  - 🔍, the search box and every task row = **16px** (H1 / 2).
+  - Every gap is the same 4px. Heights never change when the window grows;
+    a bigger window only adds task columns and visible rows.
+- **Two states** (owner's rule):
+  - **Interactive** while the mouse is over the mini window or the mini window
+    has focus: card, one row of tasks, ⌂ + 🔍 rail.
+  - **Widget** when the mouse is outside and the window is not focused:
+    🔍 and the task list disappear and the timer card fills that space
+    (full height, bigger clock). ⌂ and + stay.
+- **No undo pop-ups** in the mini timer. Only errors show (an error bar that
+  hides after 5 s). Undo stays available in the full app's toasts.
+- **No top bar.** Rail on the right, top to bottom: ⌂ Home, + New task, 🔍 Search.
 - **Not in the mini timer (owner's decision):** streak, day and date.
-- Below that size the window is resized back up where the browser allows it
-  (resizing needs a user gesture, so it also retries on the next click);
-  otherwise the content scrolls so nothing becomes unreachable.
-- Smallest legible text: 11 px task names, 10 px secondary text.
-- The smallest size must be fully usable. Larger windows only add width
-  (more task columns) and more visible rows; heights and fonts stay fixed.
+- Task tiles are one line: name on the left, total on the right.
+  Task options open with right-click, long-press or Shift+F10 (no ⋯ button).
+- Forms are two 22px rows over the left column: New/Edit task = name + Create,
+  then Max hrs + Expires + ✕ (notes stay in the full app). Add session = hours
+  + Add, then date + time + ✕.
 - Changes to the mini timer must not change the full app's UI.
 
 ## Architecture: shared logic, separate UI wrappers
 
 Every action goes through `createActions(app, ui)` in `src/ui/actions.js`.
 The full app passes its dialogs and toasts (`fullAppUi`); the mini timer passes
-its own inline forms and feedback strip. Form rules live in
+its own inline forms and an error-only bar. Form rules live in
 `src/logic/forms.js`; sorting, colours and totals come from `app.stats`
 (`logic/tasks.js`) and `app.overview` (`logic/stats.js`). A change to the logic
 reaches both front ends automatically. Do not call `app.repo` directly from a UI.
@@ -48,10 +54,10 @@ reaches both front ends automatically. Do not call `app.repo` directly from a UI
 | Running task big, whole card = Stop | ✓ biggest card, click or Enter to stop |
 | Total / max hours, progress | ✓ on the card and tiles |
 | Red (expiring) / yellow (70%) / over limit | ✓ tile edge + label + progress |
-| Undo after start / stop / archive | ✓ strip with Undo |
-| New task (name, notes, max hours, expiry) | ✓ + button or N, inline form |
+| Undo after start / stop / archive | ✗ no undo pop-ups by request (full app only) |
+| New task (name, max hours, expiry) | ✓ + button or N, inline form (notes: full app) |
 | Auto-start new tasks, "create only" 15 min | ✓ same action; ⏳ chip on the card to turn off |
-| Options: Edit, Add session, History, Archive | ✓ ⋯ / right-click / long-press / Shift+F10 |
+| Options: Edit, Add session, History, Archive | ✓ right-click / long-press / Shift+F10 |
 | Idle: time, Today, Sessions today, Daily avg | ✓ (no date, by request) |
 | Streak 🔥 | ✗ removed by request (full app only) |
 | Paused task resumes | ✓ card shows Resume |

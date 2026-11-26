@@ -31,7 +31,8 @@ your device.
   at 100%; timing continues.
 - **Mini timer.** In Chromium browsers (Chrome, Edge, Vivaldi, Opera) on a
   computer, the ↗ button in the top card opens a small always-on-top window
-  with the whole home view packed in (minimum 240 × 156). See
+  with the whole home view packed in. It opens at 240 × 52 and turns into a
+  plain timer widget when the mouse leaves it. See
   [docs/MINI_TIMER.md](docs/MINI_TIMER.md) for its features and rules.
 - **Streak.** A 🔥 badge next to the logo counts days in a row with tracked time.
 - **Options menu.** Hover a card (mouse) or press and hold (touch): Edit, Add

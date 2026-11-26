@@ -5,6 +5,11 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.13.0 — Major
+- Mini timer opens at Chromium's smallest window size, 240 × 52, and everything fits inside it with no scrollbars: timer card (32px) and one row of tasks (16px) on the left; ⌂, + and 🔍 in an 18px rail on the right (14 + 4 + 14 + 4 + 16 = 52).
+- Two states: **interactive** while the mouse is over the mini timer or it has focus; **widget** otherwise, where 🔍 and the task list disappear and the timer card fills the window.
+- No undo pop-ups in the mini timer (errors still show). Tasks are one line (name, total); forms are two compact rows; notes are edited in the full app.
+
 ## 0.12.2 — Minor
 - Mini timer heights are now fixed and never change with the window: the timer card is 60px; ⌂ and + together match it (28px each + 4px gap); 🔍, the search box and every task row are 30px (half the card); all gaps are 4px. A bigger window only adds width and more visible rows. Smallest size 240 × 136.
 
