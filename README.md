@@ -84,6 +84,12 @@ tests/                automated tests
 - **Full editor:** Code → Codespaces → Create codespace. It installs everything
   and opens a live preview (`npm run dev`). Run tests with `npm test`.
 
+## Versions
+
+See [CHANGELOG.md](CHANGELOG.md). Commits start with `Major:` (new feature or redesign) or
+`Minor:` (small fix or tweak), and every version is tagged; browse them under
+[Tags](https://github.com/vigneshbytes/HourlyTimeTracker/tags).
+
 ## Roadmap
 
 - Grand total across all tasks for a date range

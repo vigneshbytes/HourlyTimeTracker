@@ -1,0 +1,28 @@
+# Changelog
+
+Versions follow `0.MAJOR.MINOR` until 1.0:
+**Major** = a new feature or a visible redesign (middle number goes up).
+**Minor** = a small fix or tweak (last number goes up).
+Every commit subject starts with `Major:` or `Minor:`, and each version is tagged (`v0.5.1`).
+
+## 0.5.1 — Minor
+- Subtle toasts for routine feedback (start/stop, archive, logs); important ones stay bright; errors are red.
+- Settings autosave on Enter, click-outside or scroll, with a confirmation.
+
+## 0.5.0 — Major
+- Idle panel redesign: greeting, last task with Continue, stats strip, fresh quote each time you go idle.
+- History rows: status on the left edge, aligned columns, wider desktop layout.
+
+## 0.4.0 — Major
+- Top-bar timer with task name and Pause on History/Settings; auto-resume on the task list.
+
+## 0.3.0 — Major
+- New tasks start immediately, with a 15-minute "create only" mode.
+- Idle panel in the running-task slot; persistent-storage explanation.
+- (0.2.1–0.2.3, Minor: service-worker takeover fixes; "Sort by: Creation / Completion".)
+
+## 0.2.0 — Major
+- Full task tracker: task list, timers, history with graphs, settings, backups, layouts, multi-window sync.
+
+## 0.1.0 — Major
+- Scaffold: PWA shell, IndexedDB storage, GitHub Pages deploy, GPL-3.0.
