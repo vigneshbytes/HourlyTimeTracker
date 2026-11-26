@@ -74,10 +74,11 @@ export async function multiStepErase({ what, phrase = 'DELETE ALL MY DATA', conf
 
 // Bottom toast with optional action (e.g. Undo). Only one at a time.
 let currentToast = null;
-export function toast(message, { action, onAction, duration = 5000 } = {}) {
+// subtle: light, quiet style for routine feedback. error: red.
+export function toast(message, { action, onAction, duration = 5000, subtle = false, error = false } = {}) {
   currentToast?.dismiss();
   const bar = h('div', { class: 'toast-bar' });
-  const el = h('div', { class: 'toast', role: 'status' },
+  const el = h('div', { class: `toast${subtle ? ' toast-subtle' : ''}${error ? ' toast-error' : ''}`, role: error ? 'alert' : 'status' },
     h('span', { class: 'toast-msg' }, message),
     action && h('button', { class: 'toast-action', type: 'button', onclick: () => { t.dismiss(); onAction?.(); } }, action),
     bar);
@@ -99,5 +100,5 @@ export function toast(message, { action, onAction, duration = 5000 } = {}) {
 
 export function errorToast(e) {
   console.error(e);
-  toast(e?.message || String(e), { duration: 6000 });
+  toast(e?.message || String(e), { duration: 6000, error: true });
 }

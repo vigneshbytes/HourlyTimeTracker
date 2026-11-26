@@ -19,7 +19,7 @@ export function createActions(app) {
       if (running?.taskId === taskId) {
         const stopped = await repo.stopRunning();
         const msg = stopped?.dropped ? `Stopped ${name(taskId)} (under 5 s, not saved)` : `Stopped ${name(taskId)} · ${fmtDuration(stopped.session.end - stopped.session.start)}`;
-        toast(msg, { action: 'Undo', onAction: safe(() => repo.undoStop(stopped)) });
+        toast(msg, { subtle: true, action: 'Undo', onAction: safe(() => repo.undoStop(stopped)) });
         return;
       }
       if (running) {
@@ -31,7 +31,7 @@ export function createActions(app) {
         if (!ok) return;
       }
       const info = await repo.startTask(taskId);
-      toast(`Started ${name(taskId)}`, { action: 'Undo', onAction: safe(() => repo.undoStart(info)) });
+      toast(`Started ${name(taskId)}`, { subtle: true, action: 'Undo', onAction: safe(() => repo.undoStart(info)) });
     }),
 
     stop: safe(async () => {
@@ -49,6 +49,7 @@ export function createActions(app) {
       if (Date.now() < until) {
         const mins = Math.ceil((until - Date.now()) / 60000);
         toast(`Created ${task.name}. Not tracking (create-only mode, ${mins} min left).`, {
+          subtle: true,
           action: 'Start now', duration: 6000, onAction: safe(() => app.actions.activate(task.id)),
         });
         return;
@@ -63,6 +64,7 @@ export function createActions(app) {
           await repo.undoStart(info);
           await repo.updateSettings({ createOnlyUntil: Date.now() + CREATE_ONLY_MS });
           toast('Not tracking. New tasks won\u2019t start a timer for the next 15 minutes.', {
+            subtle: true,
             action: 'Turn off', duration: 7000, onAction: safe(() => repo.updateSettings({ createOnlyUntil: 0 })),
           });
         }),
@@ -82,7 +84,7 @@ export function createActions(app) {
       const v = await manualLogForm(task);
       if (!v) return;
       await repo.logManual(taskId, v);
-      toast(`Logged ${fmtDuration(v.hours * 3600000)} on ${task.name}`);
+      toast(`Logged ${fmtDuration(v.hours * 3600000)} on ${task.name}`, { subtle: true });
     }),
 
     editSession: safe(async (session) => {
@@ -109,6 +111,7 @@ export function createActions(app) {
       await repo.archiveTasks(ids);
       const label = ids.length === 1 ? `Archived ${name(ids[0])}` : `Archived ${ids.length} tasks`;
       toast(label, {
+        subtle: true,
         action: 'Undo',
         onAction: safe(async () => {
           for (const id of ids) await repo.unarchiveTask(id);
@@ -119,7 +122,7 @@ export function createActions(app) {
 
     unarchive: safe(async (taskId) => {
       await repo.unarchiveTask(taskId);
-      toast(`Restored ${name(taskId)} to the task list`);
+      toast(`Restored ${name(taskId)} to the task list`, { subtle: true });
     }),
 
     deletePermanently: safe(async (taskId) => {

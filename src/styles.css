@@ -371,3 +371,11 @@ html[data-mode=touch] .tb-btn { min-height: 36px; }
 .unarchive-btn { color: var(--accent-ink); border: 1px solid var(--line); background: #fff; }
 .unarchive-btn:hover { background: var(--accent-soft); color: var(--accent-ink); }
 main:has(> .view-history) { max-width: 1040px; }
+
+/* Quiet toast for routine feedback; red for errors. */
+.toast-subtle { background: rgb(255 255 255 / .96); color: var(--fg); border: 1px solid var(--line); box-shadow: 0 4px 14px rgb(16 24 40 / .08); padding: 6px 8px 6px 14px; font-size: .88rem; border-radius: 99px; gap: 10px; }
+.toast-subtle .toast-action { color: var(--accent-ink); padding: 4px 8px; font-weight: 650; }
+.toast-subtle .toast-action:hover { background: var(--accent-soft); }
+.toast-subtle .toast-bar { height: 2px; background: #c9d3df; }
+.toast-error { background: var(--red); }
+.toast-error .toast-bar { background: rgb(255 255 255 / .5); }

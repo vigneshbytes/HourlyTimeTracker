@@ -12,13 +12,13 @@ export function createSettingsView(app) {
   const root = h('section', { class: 'view view-settings' });
   const storageEl = h('dl', { class: 'kv' });
   const snapshotsEl = h('p', { class: 'muted small' });
-  const warnDays = h('input', { type: 'number', min: 0, max: 365, inputmode: 'numeric', class: 'num',
-    onchange: async () => {
-      const v = Math.max(0, Math.min(365, Math.round(Number(warnDays.value) || 0)));
-      warnDays.value = v;
-      await app.repo.updateSettings({ expiryWarnDays: v });
-      toast('Saved');
-    } });
+  const warnDays = h('input', { type: 'number', min: 0, max: 365, inputmode: 'numeric', class: 'num' });
+  autosave(warnDays, {
+    read: () => Math.max(0, Math.min(365, Math.round(Number(warnDays.value) || 0))),
+    current: () => app.data.settings.expiryWarnDays,
+    save: (v) => app.repo.updateSettings({ expiryWarnDays: v }),
+    label: (v) => `Saved: expiry warning ${v} day${v === 1 ? '' : 's'} ahead`,
+  });
 
   const persistBtn = h('button', { type: 'button', class: 'btn', onclick: async () => {
     const r = await requestPersistence();
@@ -179,4 +179,21 @@ export function createBulkArchiveView(app) {
   }
 
   return { root, render, tick() {} };
+}
+
+// Autosave for settings inputs: saves when the user presses Enter, clicks
+// outside the box, or scrolls the page. Bright confirmation, no undo.
+function autosave(input, { read, current, save, label }) {
+  const commit = async () => {
+    const v = read();
+    input.value = v;
+    if (v === current()) return;
+    try { await save(v); toast(label(v), { duration: 2500 }); } catch (e) { errorToast(e); }
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+  // Scrolling while editing commits too (and stops the wheel from changing a number).
+  const onScroll = () => { if (document.activeElement === input) input.blur(); };
+  addEventListener('scroll', onScroll, { passive: true, capture: true });
+  input.addEventListener('wheel', () => { if (document.activeElement === input) input.blur(); }, { passive: true });
 }
