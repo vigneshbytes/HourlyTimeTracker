@@ -18,7 +18,16 @@ export function createTaskListView(app) {
   // The slot at the top is reserved for feedback: the running task's card when
   // tracking, otherwise this idle panel (greeting, last task, stats, quote) or,
   // for new users, a short how-to.
-  const greetEl = h('span', { class: 'idle-greet' });
+  // Top-right of the card: mini timer + New task (the + is only on the idle card;
+  // the running card has its own mini-timer button next to ⋯).
+  const miniButton = (cls) => {
+    const b = h('button', { type: 'button', class: cls, 'aria-label': 'Mini timer' }, svgIcon('popout', 18));
+    b.addEventListener('click', (e) => { e.stopPropagation(); app.mini?.toggle(); });
+    return b;
+  };
+  const idleActions = h('div', { class: 'idle-actions' },
+    miniButton('card-icon-btn'),
+    h('button', { type: 'button', class: 'btn btn-primary idle-add', title: 'New task', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), h('span', null, 'New task')));
   const timeEl = h('time', { class: 'idle-time' });
   const dateEl = h('span', { class: 'idle-date' });
   const statsEl = h('dl', { class: 'idle-stats' });
@@ -26,7 +35,7 @@ export function createTaskListView(app) {
   const quoteWho = h('p', { class: 'q-who' });
   const quoteEl = h('figure', { class: 'idle-quote' }, quoteText, quoteWho);
   const hero = h('div', { class: 'idle-panel', 'aria-live': 'polite' },
-    h('div', { class: 'idle-top' }, h('div', { class: 'idle-when' }, timeEl, dateEl), greetEl),
+    h('div', { class: 'idle-top' }, h('div', { class: 'idle-when' }, timeEl, dateEl), idleActions),
     statsEl, quoteEl);
   const intro = h('div', { class: 'idle-panel intro' },
     h('p', { class: 'intro-title' }, '👋 Welcome! Let’s track your time'),
@@ -75,10 +84,16 @@ export function createTaskListView(app) {
     }).observe(quoteEl);
   }
 
-  const greeting = () => {
-    const hr = new Date().getHours();
-    return hr < 5 ? 'Working late' : hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
-  };
+  function renderMiniButtons() {
+    const available = !!app.mini?.available();
+    const open = !!app.mini?.isOpen;
+    for (const b of root.querySelectorAll('.task-mini, .card-icon-btn')) {
+      b.hidden = !available;
+      b.classList.toggle('active', open);
+      b.title = open ? 'Close the mini timer' : 'Mini timer: a tiny window that floats on top of other apps';
+      b.setAttribute('aria-pressed', String(open));
+    }
+  }
 
   function renderHero() {
     const running = app.running();
@@ -123,7 +138,6 @@ export function createTaskListView(app) {
     timeEl.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
     timeEl.dateTime = now.toISOString();
     dateEl.textContent = shortDate(now);
-    greetEl.textContent = greeting();
   }
 
   function tickCreateOnly() {
@@ -162,7 +176,7 @@ export function createTaskListView(app) {
       h('span', { class: 'task-running-row' }, timer, stopBtn),
       metaEl, progress);
     const more = h('button', { class: 'task-more', type: 'button', 'aria-label': 'Task options', title: 'Options' }, svgIcon('more', 20));
-    const li = h('li', { class: 'task-card', dataset: { id: taskId } }, main, more);
+    const li = h('li', { class: 'task-card', dataset: { id: taskId } }, main, miniButton('task-mini'), more);
 
     const wasLongPress = attachLongPress(main, () => menuFor(li._task, li, true));
     main.addEventListener('click', (e) => {
@@ -250,6 +264,7 @@ export function createTaskListView(app) {
       if (!seen.has(id)) { li.remove(); cards.delete(id); }
     }
 
+    renderMiniButtons();
     if (!animate) { for (const li of cards.values()) li.classList.remove('entering'); tick(); return; }
 
     // The idle panel leaves: a copy fades and sinks back while the card arrives.

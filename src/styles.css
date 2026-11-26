@@ -539,3 +539,21 @@ html[data-mode=widget] .help-btn { margin: 3px; }
 html[data-mode=widget] .topbar .add-btn { width: 30px; height: 30px; margin-right: 2px; }
 .tb-clock { flex: none; }
 @media (max-width: 400px) { html[data-mode=widget] .tb-name { display: none; } html[data-mode=widget] .topbar:has(.topbar-status:not([hidden])) .streak { display: none; } }
+
+/* Top card actions: mini timer + New task (idle), mini timer next to ⋯ (running) */
+.idle-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.idle-add { padding: 7px 14px 7px 10px; gap: 4px; font-size: .9rem; }
+.card-icon-btn, .task-mini { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--muted); cursor: pointer; transition: background .15s, color .15s, border-color .15s, transform .12s; }
+.card-icon-btn:hover, .task-mini:hover { color: var(--accent); border-color: #b9cdf5; background: var(--accent-soft); }
+.card-icon-btn.active, .task-mini.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.card-icon-btn:active, .task-mini:active { transform: scale(.94); }
+.card-icon-btn[hidden], .task-mini[hidden] { display: none; }
+.task-mini { position: absolute; top: 8px; right: 50px; display: none; }
+.task-card.is-running .task-mini:not([hidden]) { display: inline-grid; }
+html[data-mode=widget] .idle-add { padding: 5px 8px; font-size: .8rem; }
+html[data-mode=widget] .idle-add span { display: none; }
+html[data-mode=widget] .card-icon-btn, html[data-mode=widget] .task-mini { width: 28px; height: 28px; }
+html[data-mode=widget] .task-mini { top: 4px; right: 38px; }
+html[data-mode=widget] .idle-top { flex-wrap: nowrap; }
+@media (max-width: 520px) { .idle-add span { display: none; } .idle-add { padding: 8px; } }
+.task-card.is-running .task-head { padding-right: 44px; }

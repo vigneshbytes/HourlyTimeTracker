@@ -30,8 +30,10 @@ const app = {
 };
 
 const mini = createMiniTimer(app, { onResume: () => resumeIfPaused() });
-app.onMiniChange = () => renderChrome();
+app.onMiniChange = () => { renderChrome(); app.view?.render(); };
 const toggleMini = () => (mini.isOpen ? mini.close() : mini.open().catch((e) => toast(`Couldn't open the mini timer: ${e.message}`, { error: true })));
+// Used by the top card's mini-timer buttons.
+app.mini = { available: () => miniSupported() && app.mode !== 'touch', toggle: toggleMini, get isOpen() { return mini.isOpen; } };
 
 function recompute() {
   app.stats = buildStats(app.data.tasks, app.data.sessions, app.data.settings);
@@ -98,9 +100,7 @@ function renderChrome() {
     }));
     nav.replaceChildren(addBtn, historyLink, helpBtn, menuBtn);
   } else {
-    const miniBtn = miniSupported() && app.mode !== 'touch'
-      && h('button', { type: 'button', class: `icon-btn${mini.isOpen ? ' active' : ''}`, 'aria-label': 'Mini timer', title: mini.isOpen ? 'Close the mini timer' : 'Mini timer: a tiny window that floats on top', onclick: toggleMini }, svgIcon('popout'));
-    nav.replaceChildren(addBtn, historyLink, ...(miniBtn ? [miniBtn] : []), helpBtn,
+    nav.replaceChildren(addBtn, historyLink, helpBtn,
       link('#/settings', 'settings', 'Settings', section === 'settings' || section === 'bulk'));
   }
 }

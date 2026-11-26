@@ -5,6 +5,10 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.10.1 — Minor
+- Top card: a "+ New task" button (where the greeting was) when nothing is running, and a ↗ mini-timer button that is always there, idle or running (next to ⋯ on the running card). It lights up while the mini timer is open.
+- The mini-timer button moved out of the header into the card (still under ☰ in a small window).
+
 ## 0.10.0 — Major
 - Mini timer: a tiny always-on-top window (Document Picture-in-Picture, Chromium browsers on a computer) that can be shrunk far below the browser's ~500px minimum window width. Running: task name, timer, Stop. Paused: Resume. Idle: the time, today's total and a one-tap start of your last task. Buttons turn icon-only when it's very narrow. Open it with the ↗ header button (or ☰ → Mini timer in a small window).
 

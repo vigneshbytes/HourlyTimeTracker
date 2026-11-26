@@ -30,7 +30,7 @@ your device.
   Yellow at 70% of the task's max hours (it doesn't move). "Over limit" badge
   at 100%; timing continues.
 - **Mini timer.** In Chromium browsers (Chrome, Edge, Vivaldi, Opera) on a
-  computer, the ↗ button opens a tiny always-on-top window (Document
+  computer, the ↗ button in the top card (idle or running) opens a tiny always-on-top window (Document
   Picture-in-Picture) with the timer and Stop, or the time, today's total and a
   one-tap restart of your last task. It can be resized far narrower than the
   browser's minimum window width (~500px).
