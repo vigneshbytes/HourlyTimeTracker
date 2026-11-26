@@ -33,7 +33,17 @@ const mini = createMiniTimer(app);
 app.onMiniChange = () => { renderChrome(); app.view?.render(); };
 const toggleMini = () => (mini.isOpen ? mini.close() : mini.open().catch((e) => toast(`Couldn't open the mini timer: ${e.message}`, { error: true })));
 // Used by the top card's mini-timer buttons.
-app.mini = { available: () => miniSupported() && app.mode !== 'touch', toggle: toggleMini, get isOpen() { return mini.isOpen; } };
+app.mini = {
+  available: () => miniSupported() && app.mode !== 'touch',
+  toggle: toggleMini,
+  get isOpen() { return mini.isOpen; },
+  // Starting a task in the full app opens the mini timer too. Browsers only
+  // allow it right after a click or key press; otherwise it quietly does nothing.
+  autoOpen: () => {
+    if (mini.isOpen || !app.mini.available() || navigator.userActivation?.isActive === false) return;
+    mini.open().catch(() => {});
+  },
+};
 
 function recompute() {
   app.stats = buildStats(app.data.tasks, app.data.sessions, app.data.settings);

@@ -13,7 +13,7 @@
 //    ⌂ / + / 🔍 rail and the task list, all fitting Chromium's smallest
 //    window (X × Y = 240 × 52, kMinWindowSize in Chromium's
 //    picture_in_picture_window_manager.cc).
-//  • widget – otherwise: 🔍 and the task list disappear and the timer card
+//  • widget – only while a session is running, when neither: 🔍 and the task list disappear and the timer card
 //    takes their space.
 // Sizes (CSS px): Y = card H1 + gap + 🔍 → H1 = 32, ⌂ = + = 14, 🔍 = task row = 16.
 // X = card width + gap + rail width. No scrollbars are ever shown.
@@ -128,10 +128,11 @@ body.searching .list { grid-row: 1 / 3; }
 .bar .btn { background: transparent; color: #fff; border-color: rgb(255 255 255 / .35); }
 
 /* Widget state: only the timer card (with ⌂ and +); it takes the cleared space */
-/* Widget state = neither hovered nor focused. Pure CSS, so it switches the
+/* Widget state = a session is running and the window is neither hovered nor
+   focused (with nothing running it always stays interactive). Pure CSS, so it switches the
    instant the cursor leaves or enters. */
-html:not(:hover) body:not(.focused) :is(.list, .find, .panel, .bar) { display: none !important; }
-html:not(:hover) body:not(.focused) .card { display: grid !important; grid-row: 1 / 3; }
+html:not(:hover) body.running:not(.focused) :is(.list, .find, .panel, .bar) { display: none !important; }
+html:not(:hover) body.running:not(.focused) .card { display: grid !important; grid-row: 1 / 3; }
 
 /* No transitions or animations anywhere in the mini timer: nothing eases in or
    out when the state switches. */
@@ -189,10 +190,31 @@ export function createMiniTimer(app) {
   };
   let actions = null; // created on open(), once the database is ready
 
+  // Launch size: Chromium's minimum (X × Y) until you resize the window; after
+  // that, the size you last left it at. Chromium itself also reuses the last
+  // size while the browser is open; saving it here keeps it across restarts.
+  const SIZE_KEY = 'htt.miniSize';
+  function launchSize() {
+    try {
+      const { width, height } = JSON.parse(localStorage.getItem(SIZE_KEY)) || {};
+      if (width >= X && height >= Y) return { width, height };
+    } catch { /* no saved size */ }
+    return { width: X, height: Y };
+  }
+  let sizeTimer = null;
+  function rememberSize() {
+    clearTimeout(sizeTimer);
+    sizeTimer = setTimeout(() => {
+      if (!win) return;
+      const width = Math.max(X, win.innerWidth), height = Math.max(Y, win.innerHeight);
+      try { localStorage.setItem(SIZE_KEY, JSON.stringify({ width, height })); } catch { /* storage full or blocked */ }
+    }, 400);
+  }
+
   async function open() {
     if (win) { win.focus?.(); return; }
     actions ??= createActions(app, miniUi);
-    win = await window.documentPictureInPicture.requestWindow({ width: X, height: Y });
+    win = await window.documentPictureInPicture.requestWindow(launchSize());
     d = win.document;
     d.title = 'TimeTracker';
     d.head.append(el('meta', { name: 'color-scheme', content: 'only light' }), el('style', {}, STYLES));
@@ -201,6 +223,7 @@ export function createMiniTimer(app) {
     // Interactive / widget state. Hover is pure CSS (html:hover), which the
     // browser updates on the same frame the mouse crosses the window edge, with
     // no script in between. Focus ("the mini window is selected") is a class.
+    win.addEventListener('resize', rememberSize);
     win.addEventListener('focus', updateState);
     win.addEventListener('blur', updateState);
     d.addEventListener('focusin', updateState);
@@ -277,6 +300,7 @@ export function createMiniTimer(app) {
     const k = running ? `run:${running.id}:${taskName(running.taskId)}` : paused ? `paused:${paused.taskId}:${taskName(paused.taskId)}` : 'idle';
     if (k !== cardKey) {
       cardKey = k;
+      d.body.classList.toggle('running', !!running); // widget state only while running
       if (running) {
         const name = taskName(running.taskId);
         ui.card.className = 'card running';

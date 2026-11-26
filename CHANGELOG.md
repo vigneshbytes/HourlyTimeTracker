@@ -5,6 +5,11 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.14.0 — Major
+- Mini timer opens by itself when you start a task in the full app (start, switch, create-and-start or resume).
+- Mini timer stays interactive (tasks and 🔍 visible) whenever nothing is running; widget state only happens while a session runs.
+- Mini timer opens at 240 × 52 until you resize it, then at the size you last left it, even after a browser restart.
+
 ## 0.13.2 — Minor
 - Mini timer back to the owner's rule: interactive when the mini window is selected or the cursor is over it, widget when neither.
 - Snappier switching: hover is now handled by the browser's own CSS hover state, so the view changes on the very next frame the cursor crosses the edge (no script, no missed events). All transitions and animations (hover colour fades, pulsing dot) are removed from the mini timer.

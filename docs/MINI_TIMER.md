@@ -9,7 +9,16 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
   (`kMinWindowSize(240, 52)` in
   `chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc`).
   The owner's Vivaldi screenshot of the smallest window, minus 20% (125%
-  screen scaling), lands on about the same size. The window opens at X × Y.
+  screen scaling), lands on about the same size.
+- **Launch size:** X × Y until the user resizes the window; after that, the
+  last size they left it at (Chromium reuses it while the browser is open; we
+  also save it in localStorage `htt.miniSize` so it survives restarts). Do not
+  pass `preferInitialWindowPlacement` (it would discard the user's size).
+  Websites cannot choose the window's position.
+- **Opens automatically when a task starts** from a click in the full app
+  (start, switch, create-and-start, resume). Browsers only allow opening it
+  right after a click or key press, so it can't open on page load or browser
+  startup.
 - **Everything fits inside X × Y** with no visible scrollbar (lists scroll with
   the wheel, arrows or touch, but scrollbars are hidden).
   - Horizontally: timer card + 4px gap + rail (18px) = X.
@@ -25,7 +34,8 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
     The hover half is pure CSS (`html:hover`), so it switches on the same frame
     the cursor crosses the edge; focus is a `body.focused` class.
     No transitions or animations anywhere in the mini timer (owner's request).
-  - **Widget** when the cursor is outside AND the window is not selected:
+  - **Widget** only while a session is running, when the cursor is outside AND
+    the window is not selected (idle or paused: always interactive):
     🔍 and the task list disappear and the timer card fills that space
     (full height, bigger clock). ⌂ and + stay.
 - **No undo pop-ups** in the mini timer. Only errors show (an error bar that

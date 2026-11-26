@@ -14,6 +14,9 @@ export const CREATE_ONLY_MS = 15 * 60000;
 export const fullAppUi = (app) => ({
   toast, errorToast, confirm: confirmDialog, typeToConfirm, taskForm, manualLogForm, timedSessionForm,
   afterCreate: () => app.navigate('#/'),
+  // A session just started from a click in the full app: pop the mini timer
+  // open (the browser only allows that right after a click).
+  afterStart: () => app.mini?.autoOpen?.(),
 });
 
 export function createActions(app, ui = fullAppUi(app)) {
@@ -44,6 +47,7 @@ export function createActions(app, ui = fullAppUi(app)) {
         if (!ok) return 'cancelled';
       }
       const info = await repo.startTask(taskId);
+      ui.afterStart?.();
       toast(`Started ${name(taskId)}`, { subtle: true, action: 'Undo', onAction: safe(() => repo.undoStart(info)) });
       return 'started';
     }),
@@ -70,6 +74,7 @@ export function createActions(app, ui = fullAppUi(app)) {
       }
       const prev = app.running();
       const info = await repo.startTask(task.id);
+      ui.afterStart?.();
       const stoppedNote = prev && info.stopped && !info.stopped.dropped ? ` (stopped ${name(prev.taskId)})` : '';
       toast(`Created and started ${task.name}${stoppedNote}`, {
         action: 'Create only, don\u2019t track yet',
@@ -94,6 +99,7 @@ export function createActions(app, ui = fullAppUi(app)) {
       app.justResumed = paused.taskId;
       const id = await repo.resumePaused();
       if (!id) { app.justResumed = null; return; }
+      ui.afterStart?.();
       toast(`Resumed ${name(id)}`);
     }),
 
