@@ -1,5 +1,5 @@
 import { h, svgIcon } from './dom.js';
-import { confirmDialog, multiStepErase, toast, errorToast } from './dialogs.js';
+import { confirmDialog, multiStepErase, toast, errorToast, modal } from './dialogs.js';
 import { exportBackup, importBackup, exportDatabase, importDatabase, downloadJson, pickJsonFile } from '../db/backup.js';
 import { listSnapshots } from '../db/snapshot.js';
 import { requestPersistence } from '../db/index.js';
@@ -19,6 +19,24 @@ export function createSettingsView(app) {
       await app.repo.updateSettings({ expiryWarnDays: v });
       toast('Saved');
     } });
+
+  const persistBtn = h('button', { type: 'button', class: 'btn', onclick: async () => {
+    const r = await requestPersistence();
+    await refreshStorage();
+    await modal({
+      title: r ? 'Persistent storage is on' : 'Not granted yet',
+      build: (close) => h('div', null,
+        r ? h('p', null, 'Done. The browser will no longer clear your TimeTracker data on its own. Nothing else to do.')
+          : h('div', { class: 'small' },
+            h('p', null, 'The browser decided not to grant it right now. Nothing is broken and your data is still saved. What happens next depends on the browser:'),
+            h('ul', null,
+              h('li', null, h('strong', null, 'Firefox: '), 'a permission prompt appears near the address bar. Choose ', h('em', null, 'Allow'), '.'),
+              h('li', null, h('strong', null, 'Chrome / Edge: '), 'there is no prompt. It is usually granted once the app is installed, or after you have used it for a while. Try again later.'),
+              h('li', null, h('strong', null, 'Safari (iPhone/iPad): '), 'add the app to your Home Screen and open it from there.')),
+            h('p', null, 'Meanwhile, export a backup now and then (Backup section above).')),
+        h('div', { class: 'actions' }, h('button', { class: 'btn btn-primary', type: 'button', autofocus: true, onclick: () => close(true) }, 'OK'))),
+    });
+  } }, 'Request persistent storage');
 
   const card = (title, ...body) => h('div', { class: 'card' }, h('h3', null, title), ...body);
   const btn = (label, onclick, cls = '') => h('button', { type: 'button', class: `btn ${cls}`, onclick }, label);
@@ -56,8 +74,11 @@ export function createSettingsView(app) {
           } catch (e) { errorToast(e); }
         }, 'btn-danger-outline')),
       snapshotsEl),
-    card('Storage', storageEl,
-      btn('Request persistent storage', async () => { const r = await requestPersistence(); toast(r ? 'Persistent storage granted' : 'The browser declined for now. Installing the app usually helps.'); refreshStorage(); })),
+    card('Storage',
+      storageEl,
+      h('p', { class: 'muted small' }, 'Your tasks are saved in this browser. Normally the browser may clear a site’s saved data on its own if the device runs very low on space (this is rare). ',
+        h('strong', null, 'Persistent storage'), ' asks the browser never to clear it automatically. It is recommended and costs nothing. Your data is only removed if you erase it here or clear site data in the browser settings.'),
+      persistBtn),
     card('Danger zone',
       h('p', { class: 'muted small' }, 'Erase every task, log and setting stored in this browser.'),
       btn('Erase all data…', async () => {
@@ -75,10 +96,11 @@ export function createSettingsView(app) {
 
   async function refreshStorage() {
     const persisted = navigator.storage?.persisted ? await navigator.storage.persisted() : null;
+    persistBtn.hidden = persisted !== false;
     const est = navigator.storage?.estimate ? await navigator.storage.estimate() : null;
     const mb = (b) => (b >= 1073741824 ? `${(b / 1073741824).toFixed(1)} GB` : `${(b / 1048576).toFixed(b < 1048576 ? 2 : 1)} MB`);
     storageEl.replaceChildren(
-      h('dt', null, 'Persistent'), h('dd', null, persisted == null ? 'Not supported' : persisted ? 'Yes ✓' : 'Not yet'),
+      h('dt', null, 'Persistent'), h('dd', null, persisted == null ? 'Not supported by this browser' : persisted ? 'On ✓ (data won’t be cleared automatically)' : 'Off'),
       h('dt', null, 'Used'), h('dd', null, est ? `${mb(est.usage)} of ${mb(est.quota)}` : 'Unknown'));
     try {
       const snaps = await listSnapshots();

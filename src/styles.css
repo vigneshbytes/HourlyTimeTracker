@@ -277,3 +277,30 @@ html[data-mode=widget] .toast { font-size: .85rem; bottom: 8px; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .sort-label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: .9rem; }
+
+/* ── Idle panel: fills the running-task slot when nothing is tracked ── */
+.idle-panel { border: 2px dashed #c9d3df; border-radius: var(--radius); background: linear-gradient(180deg, #fbfcfe, #f4f7fb); padding: 16px 18px; margin-bottom: 10px; display: grid; gap: 8px; }
+.idle-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.idle-dot { width: 10px; height: 10px; border-radius: 50%; background: #9aa7b5; align-self: center; }
+.idle-label { font-weight: 650; color: var(--muted); }
+.idle-clock { font-size: clamp(1.8rem, 6vw, 2.4rem); font-weight: 700; font-variant-numeric: tabular-nums; color: #3b4754; letter-spacing: -.02em; }
+.idle-hint { margin: 0; color: var(--muted); font-size: .88rem; }
+.idle-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: grid; }
+.stat-value { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.stat-label { color: var(--muted); font-size: .75rem; }
+.idle-quote { margin: 2px 0 0; color: #4a5866; font-style: italic; font-size: .92rem; display: flex; flex-wrap: wrap; gap: 6px; }
+.idle-quote cite { font-style: normal; color: var(--muted); font-size: .82rem; }
+.intro-title { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.intro-steps { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.intro .btn { justify-self: start; }
+.create-only-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #fff7e0; border: 1px solid #f0d58a; color: #5c4400; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: .88rem; }
+@media (max-width: 520px) { .idle-stats { grid-template-columns: repeat(2, 1fr); } }
+html[data-mode=widget] .idle-panel { padding: 8px 10px; gap: 4px; margin-bottom: 6px; }
+html[data-mode=widget] .idle-clock { font-size: 1.4rem; }
+html[data-mode=widget] .idle-quote, html[data-mode=widget] .idle-hint { display: none; }
+html[data-mode=widget] .idle-stats { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+html[data-mode=widget] .stat { padding: 4px 6px; }
+html[data-mode=widget] .stat-value { font-size: .85rem; }
+html[data-mode=widget] .stat-label { font-size: .65rem; }
+html[data-mode=widget] .intro-steps { font-size: .85rem; }

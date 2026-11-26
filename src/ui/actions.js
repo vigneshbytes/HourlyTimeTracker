@@ -4,6 +4,8 @@ import { confirmDialog, toast, errorToast, typeToConfirm } from './dialogs.js';
 import { taskForm, manualLogForm, timedSessionForm } from './forms.js';
 import { fmtDuration } from '../logic/time.js';
 
+export const CREATE_ONLY_MS = 15 * 60000;
+
 export function createActions(app) {
   const { repo } = app;
   const name = (id) => app.data.tasks.find((t) => t.id === id)?.name ?? 'task';
@@ -37,10 +39,37 @@ export function createActions(app) {
       if (running) await app.actions.activate(running.taskId);
     }),
 
+    // New tasks start timing immediately, unless "create only" mode is on.
     newTask: safe(async () => {
       const v = await taskForm();
-      if (v) await repo.createTask(v);
+      if (!v) return;
+      const task = await repo.createTask(v);
+      app.navigate('#/');
+      const until = app.data.settings.createOnlyUntil || 0;
+      if (Date.now() < until) {
+        const mins = Math.ceil((until - Date.now()) / 60000);
+        toast(`Created ${task.name}. Not tracking (create-only mode, ${mins} min left).`, {
+          action: 'Start now', duration: 6000, onAction: safe(() => app.actions.activate(task.id)),
+        });
+        return;
+      }
+      const prev = app.running();
+      const info = await repo.startTask(task.id);
+      const stoppedNote = prev && info.stopped && !info.stopped.dropped ? ` (stopped ${name(prev.taskId)})` : '';
+      toast(`Created and started ${task.name}${stoppedNote}`, {
+        action: 'Create only, don\u2019t track yet',
+        duration: 10000,
+        onAction: safe(async () => {
+          await repo.undoStart(info);
+          await repo.updateSettings({ createOnlyUntil: Date.now() + CREATE_ONLY_MS });
+          toast('Not tracking. New tasks won\u2019t start a timer for the next 15 minutes.', {
+            action: 'Turn off', duration: 7000, onAction: safe(() => repo.updateSettings({ createOnlyUntil: 0 })),
+          });
+        }),
+      });
     }),
+
+    endCreateOnly: safe(() => repo.updateSettings({ createOnlyUntil: 0 })),
 
     editTask: safe(async (taskId) => {
       const task = app.data.tasks.find((t) => t.id === taskId);

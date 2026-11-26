@@ -2,6 +2,7 @@ import { h, svgIcon } from './dom.js';
 import { openMenu, attachLongPress } from './menu.js';
 import { sortMainList, sessionDuration } from '../logic/tasks.js';
 import { fmtClock, fmtDuration, fmtHours, relativeExpiry } from '../logic/time.js';
+import { overviewStats, quoteOfTheDay } from '../logic/stats.js';
 
 // Main view: the task list. Cards are keyed by task id and re-used between
 // renders so re-ordering can be animated (FLIP technique).
@@ -9,10 +10,70 @@ export function createTaskListView(app) {
   const root = h('section', { class: 'view view-tasks' });
   const list = h('ul', { class: 'task-list', 'aria-label': 'Tasks' });
   const empty = h('div', { class: 'empty' },
-    h('p', { class: 'empty-title' }, 'No tasks yet'),
-    h('p', null, 'Create a task, then tap it to start the timer.'),
+    h('p', { class: 'empty-title' }, 'No active tasks'),
+    h('p', null, 'Archived tasks are in ', h('a', { href: '#/history' }, 'History'), '. Create a new one to keep tracking.'),
     h('button', { class: 'btn btn-primary', type: 'button', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), ' New task'));
-  root.append(list, empty, h('p', { class: 'touch-hint' }, 'Press and hold a task for more options.'));
+  // The slot at the top is reserved for feedback: the running task's card when
+  // tracking, otherwise this idle panel (idle timer, stats, quote, or an intro).
+  const idleClock = h('span', { class: 'idle-clock' });
+  const idleLabel = h('span', { class: 'idle-label' });
+  const statsEl = h('div', { class: 'idle-stats' });
+  const quoteEl = h('blockquote', { class: 'idle-quote' });
+  const hero = h('div', { class: 'idle-panel', 'aria-live': 'polite' },
+    h('div', { class: 'idle-top' }, h('span', { class: 'idle-dot', 'aria-hidden': 'true' }), idleLabel, idleClock),
+    h('p', { class: 'idle-hint' }, 'Tap a task below to start tracking.'),
+    statsEl, quoteEl);
+  const intro = h('div', { class: 'idle-panel intro' },
+    h('p', { class: 'intro-title' }, 'Track time on your tasks'),
+    h('ol', { class: 'intro-steps' },
+      h('li', null, 'Create a task with ', h('strong', null, '+'), '. It starts timing right away.'),
+      h('li', null, 'Tap a task to start it. Only one runs at a time.'),
+      h('li', null, 'Tap the running task (or Stop) to stop.'),
+      h('li', null, 'See totals and every session in ', h('strong', null, 'History'), '.')),
+    h('p', { class: 'idle-hint' }, 'Everything stays on this device. Nothing is sent anywhere.'),
+    h('button', { class: 'btn btn-primary', type: 'button', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), ' New task'));
+  const createOnlyBar = h('div', { class: 'create-only-bar', role: 'status' });
+  root.append(createOnlyBar, hero, intro, list, empty, h('p', { class: 'touch-hint' }, 'Press and hold a task for more options.'));
+
+  function renderHero() {
+    const running = app.running();
+    const hasTasks = app.data.tasks.length > 0;
+    const showIntro = !hasTasks;
+    intro.hidden = !showIntro;
+    empty.hidden = true;
+    const showIdle = hasTasks && !running;
+    if (showIdle && hero.hidden !== false) hero.animate?.([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+    hero.hidden = !showIdle;
+    if (!showIdle) return;
+    const st = overviewStats(app.data.sessions);
+    hero._lastEnd = st.lastEnd;
+    const stat = (label, value) => h('div', { class: 'stat' }, h('span', { class: 'stat-value' }, value), h('span', { class: 'stat-label' }, label));
+    statsEl.replaceChildren(
+      stat('Today', fmtDuration(st.todayMs)),
+      stat('This week', fmtDuration(st.weekMs)),
+      stat('Logs today', String(st.todayLogs)),
+      stat('Day streak', st.streak ? `${st.streak} 🔥` : '0'));
+    const [q, who] = quoteOfTheDay();
+    quoteEl.replaceChildren(h('span', null, `“${q}”`), h('cite', null, `— ${who}`));
+    tickHero();
+  }
+
+  function tickHero() {
+    if (hero.hidden) return;
+    if (hero._lastEnd) { idleLabel.textContent = 'Idle for'; idleClock.textContent = fmtClock(Date.now() - hero._lastEnd); }
+    else { idleLabel.textContent = 'Not tracking'; idleClock.textContent = ''; }
+  }
+
+  function tickCreateOnly() {
+    const until = app.data.settings.createOnlyUntil || 0;
+    const left = until - Date.now();
+    createOnlyBar.hidden = left <= 0;
+    if (left > 0) {
+      createOnlyBar.replaceChildren(
+        h('span', null, `Create-only mode: new tasks won’t start a timer for ${fmtClock(left).replace(/^0:/, '')}.`),
+        h('button', { type: 'button', class: 'link', onclick: () => app.actions.endCreateOnly() }, 'Turn off'));
+    }
+  }
   const cards = new Map();
 
   function menuFor(task, anchor, asSheet) {
@@ -89,8 +150,10 @@ export function createTaskListView(app) {
     const { tasks } = app.data;
     const active = tasks.filter((t) => t.status === 'active');
     const sorted = sortMainList(active, app.stats);
-    empty.hidden = sorted.length > 0;
     list.hidden = sorted.length === 0;
+    renderHero();
+    // All tasks archived: point to History.
+    empty.hidden = !(app.data.tasks.length > 0 && sorted.length === 0);
 
     // FLIP: First — remember where every card was.
     const before = new Map();
@@ -135,6 +198,8 @@ export function createTaskListView(app) {
   }
 
   function tick() {
+    tickCreateOnly();
+    tickHero();
     const running = app.running();
     if (!running) return;
     const li = cards.get(running.taskId);

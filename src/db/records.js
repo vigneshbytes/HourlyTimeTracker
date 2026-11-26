@@ -31,6 +31,7 @@ export const SESSION_DEFAULTS = Object.freeze({
 export const SETTINGS_DEFAULTS = Object.freeze({
   expiryWarnDays: 2,
   yellowThreshold: 0.7,
+  createOnlyUntil: 0, // epoch ms; until then new tasks are created without starting a timer
 });
 
 export const normalizeTask = (raw) => ({ ...TASK_DEFAULTS, ...raw });

@@ -8,6 +8,12 @@ your device.
 
 ## Features
 
+- **New tasks start right away.** After creating a task you're taken to the
+  task list and it starts timing. A 10-second button, "Create only, don't track
+  yet", undoes that and turns on create-only mode for 15 minutes.
+- **Idle panel.** When nothing is running, the top slot shows how long you've
+  been idle, today/week totals, logs today, day streak and a quote of the day.
+  New users see a short how-to instead.
 - **One tap to start.** Tap a task to start timing it. Only one task runs at a
   time; tapping another asks before switching. An Undo bar appears for 5 s and
   sessions under 5 s are discarded.
