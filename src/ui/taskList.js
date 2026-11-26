@@ -1,8 +1,9 @@
 import { h, svgIcon } from './dom.js';
 import { openMenu, attachLongPress } from './menu.js';
 import { sortMainList, sessionDuration } from '../logic/tasks.js';
-import { fmtClock, fmtDuration, fmtHours, relativeExpiry } from '../logic/time.js';
-import { overviewStats, quoteOfTheDay } from '../logic/stats.js';
+import { fmtClock, fmtDuration, fmtHours, fmtTime, relativeExpiry } from '../logic/time.js';
+import { overviewStats } from '../logic/stats.js';
+import { fetchQuote } from '../logic/quotes.js';
 
 // Main view: the task list. Cards are keyed by task id and re-used between
 // renders so re-ordering can be animated (FLIP technique).
@@ -14,15 +15,18 @@ export function createTaskListView(app) {
     h('p', null, 'Archived tasks are in ', h('a', { href: '#/history' }, 'History'), '. Create a new one to keep tracking.'),
     h('button', { class: 'btn btn-primary', type: 'button', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), ' New task'));
   // The slot at the top is reserved for feedback: the running task's card when
-  // tracking, otherwise this idle panel (idle timer, stats, quote, or an intro).
-  const idleClock = h('span', { class: 'idle-clock' });
-  const idleLabel = h('span', { class: 'idle-label' });
-  const statsEl = h('div', { class: 'idle-stats' });
-  const quoteEl = h('blockquote', { class: 'idle-quote' });
+  // tracking, otherwise this idle panel (greeting, last task, stats, quote) or,
+  // for new users, a short how-to.
+  const greetEl = h('span', { class: 'idle-greet' });
+  const dateEl = h('span', { class: 'idle-date' });
+  const lastEl = h('p', { class: 'idle-last' });
+  const statsEl = h('dl', { class: 'idle-stats' });
+  const quoteText = h('p', { class: 'q-text' });
+  const quoteWho = h('p', { class: 'q-who' });
+  const quoteEl = h('figure', { class: 'idle-quote' }, quoteText, quoteWho);
   const hero = h('div', { class: 'idle-panel', 'aria-live': 'polite' },
-    h('div', { class: 'idle-top' }, h('span', { class: 'idle-dot', 'aria-hidden': 'true' }), idleLabel, idleClock),
-    h('p', { class: 'idle-hint' }, 'Tap a task below to start tracking.'),
-    statsEl, quoteEl);
+    h('div', { class: 'idle-top' }, greetEl, dateEl),
+    lastEl, statsEl, quoteEl);
   const intro = h('div', { class: 'idle-panel intro' },
     h('p', { class: 'intro-title' }, 'Track time on your tasks'),
     h('ol', { class: 'intro-steps' },
@@ -30,39 +34,69 @@ export function createTaskListView(app) {
       h('li', null, 'Tap a task to start it. Only one runs at a time.'),
       h('li', null, 'Tap the running task (or Stop) to stop.'),
       h('li', null, 'See totals and every session in ', h('strong', null, 'History'), '.')),
-    h('p', { class: 'idle-hint' }, 'Everything stays on this device. Nothing is sent anywhere.'),
+    h('p', { class: 'idle-hint' }, 'Your tasks and times stay on this device.'),
     h('button', { class: 'btn btn-primary', type: 'button', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), ' New task'));
   const createOnlyBar = h('div', { class: 'create-only-bar', role: 'status' });
   root.append(createOnlyBar, hero, intro, list, empty, h('p', { class: 'touch-hint' }, 'Press and hold a task for more options.'));
 
+  let wasIdle = false;
+  async function loadQuote() {
+    quoteEl.classList.remove('show');
+    const q = await fetchQuote();
+    quoteText.textContent = q.text;
+    quoteWho.textContent = q.author;
+    quoteEl.classList.add('show');
+  }
+
+  const greeting = () => {
+    const hr = new Date().getHours();
+    return hr < 5 ? 'Working late' : hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  };
+
   function renderHero() {
     const running = app.running();
     const hasTasks = app.data.tasks.length > 0;
-    const showIntro = !hasTasks;
-    intro.hidden = !showIntro;
+    intro.hidden = hasTasks;
     empty.hidden = true;
     const showIdle = hasTasks && !running;
-    if (showIdle && hero.hidden !== false) hero.animate?.([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+    if (showIdle && !wasIdle) {
+      hero.animate?.([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+      loadQuote(); // a new quote every time the app becomes idle
+    }
+    wasIdle = showIdle;
     hero.hidden = !showIdle;
     if (!showIdle) return;
+
+    greetEl.textContent = greeting();
+    dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
+    // Last task worked on, with a one-tap way to continue it.
+    let last = null;
+    for (const ses of app.data.sessions) {
+      const t = ses.end ?? ses.createdAt;
+      if (!last || t > last.t) last = { t, taskId: ses.taskId, timed: !ses.manual };
+    }
+    const lastTask = last && app.data.tasks.find((x) => x.id === last.taskId && x.status === 'active');
+    if (lastTask) {
+      lastEl.replaceChildren(
+        h('span', { class: 'muted' }, 'Last worked on '),
+        h('strong', null, lastTask.name),
+        last.timed ? h('span', { class: 'muted' }, ` · stopped ${fmtTime(last.t)}`) : null,
+        h('button', { type: 'button', class: 'continue-btn', onclick: () => app.actions.activate(lastTask.id) }, svgIcon('play', 14), ' Continue'));
+    } else {
+      lastEl.replaceChildren(h('span', { class: 'muted' }, 'Nothing running. Tap a task below to start tracking.'));
+    }
+
     const st = overviewStats(app.data.sessions);
-    hero._lastEnd = st.lastEnd;
-    const stat = (label, value) => h('div', { class: 'stat' }, h('span', { class: 'stat-value' }, value), h('span', { class: 'stat-label' }, label));
-    statsEl.replaceChildren(
-      stat('Today', fmtDuration(st.todayMs)),
-      stat('This week', fmtDuration(st.weekMs)),
-      stat('Logs today', String(st.todayLogs)),
-      stat('Day streak', st.streak ? `${st.streak} 🔥` : '0'));
-    const [q, who] = quoteOfTheDay();
-    quoteEl.replaceChildren(h('span', null, `“${q}”`), h('cite', null, `— ${who}`));
-    tickHero();
+    statsEl.replaceChildren(...[
+      ['Today', fmtDuration(st.todayMs)],
+      ['This week', fmtDuration(st.weekMs)],
+      ['Logs today', String(st.todayLogs)],
+      ['Day streak', st.streak ? `${st.streak} ${st.streak === 1 ? 'day' : 'days'}` : '–'],
+    ].map(([label, value]) => h('div', { class: 'stat' }, h('dt', { class: 'stat-label' }, label), h('dd', { class: 'stat-value' }, value))));
   }
 
-  function tickHero() {
-    if (hero.hidden) return;
-    if (hero._lastEnd) { idleLabel.textContent = 'Idle for'; idleClock.textContent = fmtClock(Date.now() - hero._lastEnd); }
-    else { idleLabel.textContent = 'Not tracking'; idleClock.textContent = ''; }
-  }
+  function tickHero() {}
 
   function tickCreateOnly() {
     const until = app.data.settings.createOnlyUntil || 0;

@@ -25,19 +25,26 @@ export function createHistoryView(app) {
       h('div', { class: 'controls-row' }, filters, h('label', { class: 'sort-label' }, h('span', null, 'Sort by:'), sort))),
     summary, results);
 
+  // Row layout (wide): [status] [name + notes] [logs] [created] [completed] [total] [action]
   function row(task) {
     const st = app.stats.get(task.id);
     const archived = task.status === 'archived';
     const done = completionDate(task, st);
-    return h('li', { class: `history-row${archived ? ' is-archived' : ''}` },
+    const status = archived ? 'archived' : st.running ? 'running' : 'active';
+    const col = (label, value, cls = '') => h('span', { class: `hr-col ${cls}` }, h('span', { class: 'hr-col-label' }, label), h('span', { class: 'hr-col-value' }, value));
+    return h('li', { class: `history-row status-${status}` },
       h('button', { type: 'button', class: 'history-open', onclick: () => app.navigate(`#/history/${task.id}`) },
-        h('span', { class: 'hr-top' },
+        h('span', { class: 'hr-status' }, h('span', { class: 'hr-pill' }, status[0].toUpperCase() + status.slice(1))),
+        h('span', { class: 'hr-main' },
           h('span', { class: 'hr-name' }, task.name),
-          h('span', { class: `chip ${archived ? 'chip-muted' : st.running ? 'chip-live' : 'chip-ok'}` }, archived ? 'Archived' : st.running ? 'Running' : 'Active')),
-        h('span', { class: 'hr-total js-total', dataset: { task: task.id } }, fmtDuration(st.totalMs)),
-        h('span', { class: 'hr-meta' }, `${st.sessions.length} ${st.sessions.length === 1 ? 'log' : 'logs'} · created ${fmtDate(task.createdAt)}${done ? ` · completed ${fmtDate(done)}` : ''}`),
-        task.notes && h('span', { class: 'hr-notes' }, task.notes)),
-      archived && h('button', { type: 'button', class: 'btn btn-small', onclick: () => app.actions.unarchive(task.id) }, svgIcon('restore', 16), ' Unarchive'));
+          task.notes ? h('span', { class: 'hr-notes' }, task.notes) : null),
+        h('span', { class: 'hr-meta' },
+          col('Logs', String(st.sessions.length), 'hr-logs'),
+          col('Created', fmtDate(task.createdAt), 'hr-created'),
+          col('Completed', done ? fmtDate(done) : '–', 'hr-done')),
+        h('span', { class: 'hr-total js-total', dataset: { task: task.id } }, fmtDuration(st.totalMs))),
+      h('span', { class: 'hr-action' },
+        archived ? h('button', { type: 'button', class: 'icon-btn unarchive-btn', title: 'Unarchive (back to the task list)', 'aria-label': `Unarchive ${task.name}`, onclick: () => app.actions.unarchive(task.id) }, svgIcon('restore', 18)) : null));
   }
 
   function renderResults() {
