@@ -4,7 +4,13 @@ const CACHE = `htt-${VERSION}`;
 const PRECACHE = '__PRECACHE__';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)));
+  event.waitUntil((async () => {
+    const hadAppCache = (await caches.keys()).some((k) => k.startsWith('htt-'));
+    await (await caches.open(CACHE)).addAll(PRECACHE);
+    // First real version replacing the early scaffold: take over right away.
+    // Later versions wait for the user to press "Update".
+    if (!hadAppCache) self.skipWaiting();
+  })());
 });
 
 self.addEventListener('message', (event) => {
