@@ -15,6 +15,7 @@ import { installDarkGuard } from './ui/darkguard.js';
 import { setupLayout } from './ui/layout.js';
 import { setupInstances } from './ui/instances.js';
 import { helpButton } from './ui/help.js';
+import { createMiniTimer, miniSupported } from './ui/miniTimer.js';
 
 const helpBtn = helpButton();
 
@@ -27,6 +28,10 @@ const app = {
   running() { return app.data.sessions.find((s) => s.running === 1) || null; },
   navigate(hash) { if (location.hash !== hash) location.hash = hash; else route(); },
 };
+
+const mini = createMiniTimer(app, { onResume: () => resumeIfPaused() });
+app.onMiniChange = () => renderChrome();
+const toggleMini = () => (mini.isOpen ? mini.close() : mini.open().catch((e) => toast(`Couldn't open the mini timer: ${e.message}`, { error: true })));
 
 function recompute() {
   app.stats = buildStats(app.data.tasks, app.data.sessions, app.data.settings);
@@ -88,11 +93,14 @@ function renderChrome() {
       items: [
         { label: 'Tasks', icon: 'clock', onClick: () => app.navigate('#/') },
         { label: 'Settings', icon: 'settings', onClick: () => app.navigate('#/settings') },
+        ...(miniSupported() ? [{ label: mini.isOpen ? 'Close mini timer' : 'Mini timer (floats on top)', icon: 'popout', onClick: toggleMini }] : []),
       ],
     }));
     nav.replaceChildren(addBtn, historyLink, helpBtn, menuBtn);
   } else {
-    nav.replaceChildren(addBtn, historyLink, helpBtn,
+    const miniBtn = miniSupported() && app.mode !== 'touch'
+      && h('button', { type: 'button', class: `icon-btn${mini.isOpen ? ' active' : ''}`, 'aria-label': 'Mini timer', title: mini.isOpen ? 'Close the mini timer' : 'Mini timer: a tiny window that floats on top', onclick: toggleMini }, svgIcon('popout'));
+    nav.replaceChildren(addBtn, historyLink, ...(miniBtn ? [miniBtn] : []), helpBtn,
       link('#/settings', 'settings', 'Settings', section === 'settings' || section === 'bulk'));
   }
 }
@@ -160,6 +168,7 @@ function tick() {
     bar.btn.setAttribute('aria-label', running ? `Pause ${task?.name ?? ''}` : `Resume ${task?.name ?? ''}`);
   }
   app.view?.tick();
+  mini.tick();
 }
 
 // ── Service worker / updates ───────────────────────────────────────────────

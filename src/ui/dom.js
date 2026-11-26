@@ -39,6 +39,7 @@ export function svgIcon(name, size = 20) {
     trash: 'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14',
     restore: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5',
     close: 'M18 6 6 18M6 6l12 12',
+    popout: 'M14 4h6v6M20 4l-8 8M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
   };
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
