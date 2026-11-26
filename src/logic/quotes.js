@@ -5,7 +5,7 @@ import { QUOTES } from './stats.js';
 
 const SOURCES = [
   {
-    url: 'https://quoteslate.vercel.app/api/quotes/random?maxLength=140&tags=motivation,productivity,wisdom,success,inspiration',
+    url: 'https://quoteslate.vercel.app/api/quotes/random?maxLength=140&tags=motivation,wisdom,success,inspiration,perseverance,growth',
     parse: (j) => ({ text: j.quote, author: j.author }),
   },
   { url: 'https://dummyjson.com/quotes/random', parse: (j) => ({ text: j.quote, author: j.author }) },

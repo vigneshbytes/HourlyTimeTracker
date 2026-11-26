@@ -5,13 +5,19 @@ const PRECACHE = '__PRECACHE__';
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const keys = await caches.keys();
-    const legacyActive = keys.some((k) => k.startsWith('timetracker-'));
-    const hadAppCache = keys.some((k) => k.startsWith('htt-'));
-    await (await caches.open(CACHE)).addAll(PRECACHE);
-    // First real version replacing the early scaffold: take over right away.
-    // Later versions wait for the user to press "Update".
-    if (legacyActive || !hadAppCache) self.skipWaiting();
+    const cache = await caches.open(CACHE);
+    // cache: 'reload' skips the browser's HTTP cache, so a stale copy of the
+    // page (GitHub Pages caches for 10 min) can never be stored with new files.
+    await cache.addAll(PRECACHE.map((u) => new Request(u, { cache: 'reload' })));
+    // Sanity check: the cached page must point at the files we just cached.
+    const html = await (await cache.match('./')).text();
+    const assets = PRECACHE.filter((u) => u.startsWith('./assets/'));
+    if (!assets.every((a) => html.includes(a.slice(2)))) {
+      await caches.delete(CACHE);
+      throw new Error('Cached page does not match this version; keeping the previous one.');
+    }
+    // Activate right away; the page offers a reload to pick up the new version.
+    self.skipWaiting();
   })());
 });
 
@@ -31,7 +37,6 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   if (req.mode === 'navigate') {
-    // Navigations always get the cached app shell (works offline; hash routing handles views).
     event.respondWith(caches.match('./', { cacheName: CACHE, ignoreVary: true }).then((hit) => hit || fetch(req)));
     return;
   }

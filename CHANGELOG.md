@@ -5,6 +5,12 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.6.1 — Minor
+- Fix: the app could get stuck on "Loading…" after an update. The offline cache could save an outdated copy of the page (GitHub Pages caches pages for 10 minutes) that pointed at files that no longer existed. The cache now always downloads fresh files and checks they match before switching over.
+- Updates now install by themselves; a "TimeTracker was updated · Reload" message appears.
+- Safety net: if the app hasn't started after 8 seconds, a "Repair and reload" button clears only the cached app files (tasks are untouched).
+- Fix: quote API request used an invalid tag.
+
 ## 0.6.0 — Major
 - Welcome card rewritten with emojis and simpler wording.
 - New ? button next to Settings: hover (or tap) for a quick how-to and tips.

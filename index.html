@@ -28,5 +28,24 @@
   </header>
   <main id="view" tabindex="-1"><p class="loading">Loading…</p></main>
   <noscript>TimeTracker needs JavaScript.</noscript>
+  <script>
+    // Safety net: if the app has not started after 8 s (e.g. a broken offline
+    // cache), offer a repair that clears ONLY the cached app files.
+    // Your tasks live in IndexedDB and are not touched.
+    setTimeout(function () {
+      if (window.__httBooted) return;
+      var v = document.getElementById('view');
+      v.innerHTML = '<div class="card" style="margin-top:10vh"><h2>Taking too long?</h2><p>The saved copy of the app may be out of date. Repairing reloads the app files. Your tasks and logs are not affected.</p><button class="btn btn-primary" id="repair">Repair and reload</button></div>';
+      document.getElementById('repair').onclick = async function () {
+        try {
+          var regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(function (r) { return r.unregister(); }));
+          var keys = await caches.keys();
+          await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        } catch (e) {}
+        location.reload();
+      };
+    }, 8000);
+  </script>
 </body>
 </html>

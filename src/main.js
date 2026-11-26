@@ -147,19 +147,16 @@ function tick() {
 let updateRequested = false;
 function registerSW() {
   if (!('serviceWorker' in navigator) || import.meta.env.DEV) return;
+  const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('./sw.js', { scope: './' }).then((reg) => {
-    const offer = (worker) => toast('A new version is ready.', { action: 'Update', duration: 60000, onAction: () => { updateRequested = true; worker.postMessage('skip-waiting'); } });
-    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
-    reg.addEventListener('updatefound', () => {
-      const w = reg.installing;
-      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
-    });
     setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
   });
-  // Reload only when the user accepted an update (not on the very first install).
-  let reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (updateRequested && !reloading) { reloading = true; location.reload(); } });
+  // A new version activates by itself; this page keeps working, and offers a reload.
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || updateRequested) return;
+    toast('TimeTracker was updated.', { action: 'Reload', duration: 60000, onAction: () => { updateRequested = true; location.reload(); } });
+  });
 }
 
 function fatal(message) {
@@ -168,6 +165,7 @@ function fatal(message) {
 }
 
 async function boot() {
+  window.__httBooted = true;
   installDarkGuard();
   setupLayout(app, () => { if (app.view) { renderChrome(); app.view.render(); } });
   let opened;
