@@ -87,8 +87,7 @@ tests/                automated tests
 ## Versions
 
 See [CHANGELOG.md](CHANGELOG.md). Commits start with `Major:` (new feature or redesign) or
-`Minor:` (small fix or tweak), and every version is tagged; browse them under
-[Tags](https://github.com/vigneshbytes/HourlyTimeTracker/tags).
+`Minor:` (small fix or tweak) and name the version, e.g. `(v0.5.2)`.
 
 ## Roadmap
 

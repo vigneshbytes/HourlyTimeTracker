@@ -3,7 +3,10 @@
 Versions follow `0.MAJOR.MINOR` until 1.0:
 **Major** = a new feature or a visible redesign (middle number goes up).
 **Minor** = a small fix or tweak (last number goes up).
-Every commit subject starts with `Major:` or `Minor:`, and each version is tagged (`v0.5.1`).
+Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
+
+## 0.5.2 — Minor
+- Versions are tracked by commit names and this changelog (no Git tags).
 
 ## 0.5.1 — Minor
 - Subtle toasts for routine feedback (start/stop, archive, logs); important ones stay bright; errors are red.
