@@ -5,6 +5,9 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.12.1 — Minor
+- Mini timer: the top bar is gone. ⌂ Home (top), + New task (middle) and 🔍 Search (bottom, next to the tasks) now sit in a slim rail on the right; the search box opens above the tasks. Streak and date are no longer shown in the mini timer. Smallest size is now 240 × 128 (still two rows of tasks). The full app is unchanged.
+
 ## 0.12.0 — Major
 - Mini timer works fully at its smallest size: a minimum of 240 × 156 (two rows of tasks at legible text sizes); smaller windows are resized back up where the browser allows, otherwise the content scrolls.
 - Mini timer gains the rest of the home page: + New task (or N) with name, max hours, expiry and notes; task options (⋯, right-click, long-press or Shift+F10): Edit, Add session, History, Archive; Undo for every change; "Switch to …?" confirm; create-only ⏳ chip; 🔥 streak; idle stats (Today, sessions, daily avg); progress toward max hours; over-limit / expiring labels.

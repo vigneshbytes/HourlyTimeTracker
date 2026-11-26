@@ -7,9 +7,14 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
 
 - Chromium lets this window shrink to about **240 × 52** CSS px (measured from
   a Vivaldi screenshot: 300 × 62 screen px at 125% scaling). That is too small.
-- The mini timer enforces a minimum of **240 × 156** (`MIN_W` × `MIN_H`): the
+- The mini timer enforces a minimum of **240 × 128** (`MIN_W` × `MIN_H`): the
   smallest size that fits everything at legible text sizes:
-  toolbar 22 + main card 52 + **two rows of tasks** (2 × 29 + 3) + gaps 3 × 4 + padding 2 × 4.
+  main card 52 + **two rows of tasks** (2 × 29 + 3) + gap 4 + padding 2 × 4.
+  (It was 240 × 156 with a top bar; the owner removed the top bar.)
+- **No top bar.** A slim rail on the right holds, top to bottom: ⌂ Home (top),
+  + New task (middle), 🔍 Search (bottom, next to the tasks it searches). The
+  search box opens above the task grid.
+- **Not in the mini timer (owner's decision):** streak, day and date.
 - Below that size the window is resized back up where the browser allows it
   (resizing needs a user gesture, so it also retries on the next click);
   otherwise the content scrolls so nothing becomes unreachable.
@@ -39,10 +44,10 @@ reaches both front ends automatically. Do not call `app.repo` directly from a UI
 | Red (expiring) / yellow (70%) / over limit | ✓ tile edge + label + progress |
 | Undo after start / stop / archive | ✓ strip with Undo |
 | New task (name, notes, max hours, expiry) | ✓ + button or N, inline form |
-| Auto-start new tasks, "create only" 15 min | ✓ same action; ⏳ chip to turn off |
+| Auto-start new tasks, "create only" 15 min | ✓ same action; ⏳ chip on the card to turn off |
 | Options: Edit, Add session, History, Archive | ✓ ⋯ / right-click / long-press / Shift+F10 |
-| Idle: time, date, Today, Sessions today, Daily avg | ✓ |
-| Streak 🔥 | ✓ toolbar |
+| Idle: time, Today, Sessions today, Daily avg | ✓ (no date, by request) |
+| Streak 🔥 | ✗ removed by request (full app only) |
 | Paused task resumes | ✓ card shows Resume |
 | Search (mini only) | ✓ 🔍, / or Ctrl+F, arrows, Enter, Esc |
 | Back to the full app | ✓ ⌂ |

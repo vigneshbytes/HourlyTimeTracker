@@ -12,16 +12,18 @@
 // MIN_W × MIN_H below is the smallest size that fits everything at legible
 // text sizes (11px task names, two rows of tasks); below it the window is
 // resized back up where the browser allows, and otherwise scrolls.
-import { fmtClock, fmtDuration, shortDate, toInputDate, toInputTime } from '../logic/time.js';
+// Layout: no top bar; a slim rail on the right holds ⌂ (top), + (middle) and
+// 🔍 (bottom, next to the tasks it searches).
+import { fmtClock, fmtDuration, toInputDate, toInputTime } from '../logic/time.js';
 import { sessionDuration, sortMainList } from '../logic/tasks.js';
 import { checkTask, checkManualSession } from '../logic/forms.js';
 import { createActions } from './actions.js';
 
 export const miniSupported = () => 'documentPictureInPicture' in window;
 
-// toolbar 22 + card 52 + two task rows (2×29 + 3) + gaps (3×4) + padding (2×4)
+// card 52 + two task rows (2 × 29 + 3) + gap 4 + padding (2 × 4)
 export const MIN_W = 240;
-export const MIN_H = 156;
+export const MIN_H = 128;
 
 const ICON = {
   stop: 'M7 7h10v10H7z',
@@ -38,26 +40,28 @@ const STYLES = `
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #f4f6f9 !important; color: #1f2937; filter: none !important;
   font: 11px/1.2 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-body { display: flex; flex-direction: column; gap: 4px; padding: 4px; overflow: hidden; position: relative; min-width: ${MIN_W - 8}px; }
-body.cramped { overflow-y: auto; }
-body.cramped > * { flex-shrink: 0; }
+body { display: grid; grid-template-columns: minmax(0, 1fr) 22px; grid-template-rows: auto minmax(0, 1fr); gap: 4px; padding: 4px; overflow: hidden; position: relative; min-width: ${MIN_W - 8}px; }
+body.cramped { overflow-y: auto; height: auto; min-height: 100%; }
+body.cramped .area { min-height: 61px; }
+.main-col { grid-column: 1; }
+.card { grid-row: 1; }
+.area { grid-row: 2; }
+.panel { grid-row: 1 / 3; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 2px solid #1a56db; outline-offset: 1px; }
 
-/* Toolbar */
-.bar { display: flex; align-items: center; gap: 3px; flex: none; height: 22px; }
-.when { flex: 1; min-width: 0; font-weight: 650; color: #4b5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; padding-left: 2px; }
-.chip { flex: none; height: 20px; display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; border-radius: 99px; font-weight: 700; font-size: 10.5px; white-space: nowrap; border: 1px solid transparent; background: none; }
-.streak { background: #fff3e6; color: #9a4a00; border-color: #ffd9b0; cursor: default; }
+/* Rail: ⌂ top, + middle, 🔍 bottom (next to the tasks) */
+.rail { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: space-between; align-items: center; min-height: 0; }
+.chip { display: inline-flex; align-items: center; padding: 0 5px; height: 16px; border-radius: 99px; font-weight: 700; font-size: 10px; white-space: nowrap; border: 1px solid transparent; cursor: pointer; }
 .co { background: #fff7e0; color: #5c4400; border-color: #f0d58a; }
 .co:hover { background: #ffefc2; }
 .ibtn { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid #dfe4ea; border-radius: 7px; background: #fff; color: #4b5563; padding: 0; transition: background .15s, color .15s, border-color .15s; }
 .ibtn:hover, .ibtn[aria-pressed=true] { color: #1a56db; border-color: #b9cdf5; background: #eaf1fe; }
 .ibtn.add { color: #fff; background: #1a56db; border-color: #1a56db; }
 .ibtn.add:hover { background: #1747b8; color: #fff; }
-.search { flex: 1; min-width: 0; height: 22px; border: 1px solid #b9cdf5; border-radius: 7px; padding: 0 6px; background: #fff; }
+.search { flex: none; width: 100%; height: 22px; margin-bottom: 3px; border: 1px solid #b9cdf5; border-radius: 7px; padding: 0 6px; background: #fff; }
 
 /* Main card: running task (whole card = Stop), paused (Resume), or idle clock + stats */
 .card { position: relative; flex: none; width: 100%; min-height: 52px; border-radius: 10px; border: 1.5px solid #1a56db; background: linear-gradient(180deg, #f3f8ff, #fff);
@@ -77,6 +81,7 @@ button { cursor: pointer; }
 .card.idle { border: 1.5px dashed #c9d3df; background: #fbfcfe; cursor: default; }
 .card.idle:active { transform: none; }
 .card.idle .big { font-size: clamp(18px, min(9vw, 14vh), 44px); }
+.card .corner { justify-self: end; align-self: start; }
 .card .stats { grid-column: 1 / -1; color: #4b5563; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .card .stats b { color: #1f2937; }
 .bar-progress { position: absolute; left: 8px; right: 8px; bottom: 3px; height: 2px; border-radius: 2px; background: #e5e9ef; overflow: hidden; }
@@ -106,8 +111,8 @@ button { cursor: pointer; }
 .panel { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; background: #fff; border: 1px solid #dfe4ea; border-radius: 10px; padding: 5px 6px; overflow-y: auto; }
 .panel h2 { margin: 0; font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row { display: flex; gap: 4px; }
-.row > * { flex: 1; min-width: 0; }
-.inp { height: 24px; border: 1px solid #cfd6df; border-radius: 6px; padding: 0 6px; background: #fff; width: 100%; }
+.row > .inp, .row > * { flex: 1 1 0; min-width: 0; width: auto; }
+.inp { flex: none; height: 24px; border: 1px solid #cfd6df; border-radius: 6px; padding: 0 6px; background: #fff; width: 100%; }
 .inp:focus { border-color: #1a56db; outline: none; box-shadow: 0 0 0 2px #d7e5fd; }
 .inp.err { border-color: #d93025; }
 .foot { display: flex; align-items: center; gap: 4px; margin-top: auto; }
@@ -118,10 +123,10 @@ button { cursor: pointer; }
 .btn.primary:disabled { opacity: .45; cursor: default; }
 .btn.danger { color: #b42318; }
 .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.menu .btn { width: 100%; text-align: left; padding: 0 8px; }
+.menu .btn { width: 100%; text-align: left; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Feedback strip (undo / confirm / errors), over the bottom of the grid */
-.strip { position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 5; display: flex; align-items: center; gap: 4px; background: #1f2937; color: #fff; border-radius: 8px; padding: 3px 3px 3px 8px; min-height: 26px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
+.strip { position: absolute; left: 4px; right: 30px; bottom: 4px; z-index: 5; display: flex; align-items: center; gap: 4px; background: #1f2937; color: #fff; border-radius: 8px; padding: 3px 3px 3px 8px; min-height: 26px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
 .strip span { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; }
 .strip button { border: 0; border-radius: 6px; padding: 3px 7px; font-weight: 700; background: none; color: #8ab4ff; flex: none; }
 .strip button.primary { background: #1a56db; color: #fff; }
@@ -220,10 +225,9 @@ export function createMiniTimer(app) {
   }
 
   function build() {
-    ui.streak = el('span', { class: 'chip streak', role: 'img' });
-    ui.when = el('div', { class: 'when' });
     ui.search = el('input', { class: 'search', type: 'search', placeholder: 'Search tasks…', 'aria-label': 'Search tasks', hidden: true, autocomplete: 'off' });
-    ui.co = el('button', { class: 'chip co', type: 'button', hidden: true });
+    // Create-only mode chip (lives on the main card); a span because the card is a button.
+    ui.co = el('span', { class: 'chip co', role: 'button', tabindex: '0', hidden: true });
     ui.addBtn = el('button', { class: 'ibtn add', type: 'button', title: 'New task (N)', 'aria-label': 'New task' }, icon('plus'));
     ui.searchBtn = el('button', { class: 'ibtn', type: 'button', title: 'Search tasks (/)', 'aria-label': 'Search tasks', 'aria-pressed': 'false' }, icon('search'));
     ui.homeBtn = el('button', { class: 'ibtn', type: 'button', title: 'Open the full app', 'aria-label': 'Open the full app' }, icon('home'));
@@ -231,14 +235,17 @@ export function createMiniTimer(app) {
     ui.grid = el('div', { class: 'grid', role: 'grid', 'aria-label': 'Tasks' });
     ui.gridWrap = el('div', { class: 'grid-wrap' }, ui.grid);
     ui.panel = el('div', { class: 'panel', hidden: true });
-    ui.area = el('div', { class: 'area' }, ui.gridWrap);
+    ui.area = el('div', { class: 'area' }, ui.search, ui.gridWrap);
     ui.strip = el('div', { class: 'strip', role: 'status', hidden: true });
-    d.body.replaceChildren(el('div', { class: 'bar' }, ui.streak, ui.when, ui.search, ui.co, ui.addBtn, ui.searchBtn, ui.homeBtn), ui.card, ui.area, ui.panel, ui.strip);
+    ui.card.classList.add('main-col'); ui.area.classList.add('main-col'); ui.panel.classList.add('main-col');
+    d.body.replaceChildren(ui.card, ui.area, ui.panel, el('div', { class: 'rail' }, ui.homeBtn, ui.addBtn, ui.searchBtn), ui.strip);
 
     ui.addBtn.addEventListener('click', () => actions.newTask());
     ui.searchBtn.addEventListener('click', () => (searchOpen ? closeSearch() : openSearch()));
     ui.homeBtn.addEventListener('click', () => goHome('#/'));
-    ui.co.addEventListener('click', () => actions.endCreateOnly());
+    const endCo = (e) => { e.stopPropagation(); e.preventDefault(); actions.endCreateOnly(); };
+    ui.co.addEventListener('click', endCo);
+    ui.co.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') endCo(e); });
     ui.card.addEventListener('click', onCardClick);
     ui.search.addEventListener('input', () => { query = ui.search.value; selIndex = 0; renderGrid(true); });
     ui.search.addEventListener('keydown', onSearchKey);
@@ -286,7 +293,7 @@ export function createMiniTimer(app) {
         ui.card.disabled = false;
         ui.card.title = `Click anywhere to stop ${name}`;
         ui.card.setAttribute('aria-label', `Stop ${name}`);
-        ui.card.replaceChildren(el('span', { class: 'top' }, el('span', { class: 'name' }, name), el('span', { class: 'meta' })),
+        ui.card.replaceChildren(el('span', { class: 'top' }, el('span', { class: 'name' }, name), ui.co, el('span', { class: 'meta' })),
           el('span', { class: 'big' }, el('i', { class: 'dot' }), el('span', { class: 'clock' })),
           el('span', { class: 'act' }, icon('stop', 10), 'Stop'),
           el('span', { class: 'bar-progress', hidden: true }, el('i')));
@@ -304,7 +311,7 @@ export function createMiniTimer(app) {
         ui.card.disabled = true;
         ui.card.title = '';
         ui.card.setAttribute('aria-label', 'Nothing running');
-        ui.card.replaceChildren(el('span', { class: 'big clock' }), el('span'), el('span', { class: 'stats' }));
+        ui.card.replaceChildren(el('span', { class: 'big clock' }), el('span', { class: 'corner' }, ui.co), el('span', { class: 'stats' }));
       }
     }
     if (running) {
@@ -330,11 +337,6 @@ export function createMiniTimer(app) {
       }
       d.title = 'TimeTracker';
     }
-    // Toolbar: date when idle (the card shows the time), time + today while timing.
-    ui.when.textContent = running || paused ? `${time} · ${fmtDuration(o.todayMs ?? 0)} today` : shortDate(now);
-    ui.streak.hidden = !o.streak;
-    ui.streak.textContent = `🔥${o.streak ?? 0}`;
-    ui.streak.title = `${o.streak}-day streak`;
     const until = app.data.settings.createOnlyUntil || 0;
     ui.co.hidden = Date.now() >= until;
     if (!ui.co.hidden) {
@@ -444,7 +446,6 @@ export function createMiniTimer(app) {
     if (panel) panel.close(null);
     searchOpen = true;
     ui.search.hidden = false;
-    ui.when.hidden = true;
     ui.searchBtn.setAttribute('aria-pressed', 'true');
     ui.searchBtn.replaceChildren(icon('close'));
     ui.searchBtn.title = 'Close search (Esc)';
@@ -456,7 +457,6 @@ export function createMiniTimer(app) {
     searchOpen = false;
     query = ''; ui.search.value = ''; selIndex = 0;
     ui.search.hidden = true;
-    ui.when.hidden = false;
     ui.searchBtn.setAttribute('aria-pressed', 'false');
     ui.searchBtn.replaceChildren(icon('search'));
     ui.searchBtn.title = 'Search tasks (/)';
@@ -488,7 +488,7 @@ export function createMiniTimer(app) {
   // New / edit task: same fields and rules as the full app's dialog.
   function taskPanel(task = null) {
     return openPanel((close) => {
-      const name = el('input', { class: 'inp', placeholder: 'Task name', 'aria-label': 'Name', maxlength: '120', autofocus: true, value: task?.name ?? '' });
+      const name = el('input', { class: 'inp', placeholder: task ? 'Task name' : 'New task name', 'aria-label': task ? `Edit ${task.name}: name` : 'New task name', maxlength: '120', autofocus: true, value: task?.name ?? '' });
       const limit = el('input', { class: 'inp', placeholder: 'Max hours', 'aria-label': 'Max time in hours (optional)', inputmode: 'decimal', value: task?.maxHours ?? '' });
       const expiry = el('input', { class: 'inp', placeholder: 'Expires: days or date', 'aria-label': 'Expiry: days or a date (optional)', value: task?.expiresAt ? toInputDate(task.expiresAt) : '' });
       const notes = el('input', { class: 'inp', placeholder: 'Notes (optional)', 'aria-label': 'Notes', maxlength: '2000', value: task?.notes ?? '' });
@@ -499,7 +499,7 @@ export function createMiniTimer(app) {
         limit.classList.toggle('err', !!r.errors.limit);
         expiry.classList.toggle('err', !!r.errors.expiry);
         const focusHint = d.activeElement === expiry ? (r.errors.expiry || r.hints.expiry) : d.activeElement === limit ? (r.errors.limit || r.hints.limit) : (r.errors.limit || r.errors.expiry || '');
-        hint.textContent = focusHint || (task ? '' : 'Enter to create');
+        hint.textContent = focusHint || (task ? 'Editing task' : 'New task · Enter');
         hint.classList.toggle('err', !!(r.errors.limit || r.errors.expiry));
         save.disabled = !r.ok;
         return r.value;
@@ -507,7 +507,6 @@ export function createMiniTimer(app) {
       for (const i of [name, limit, expiry, notes]) { i.addEventListener('input', check); i.addEventListener('focus', check); }
       check();
       const form = el('form', { class: 'panel-form', style: 'display:contents', onsubmit: (e) => { e.preventDefault(); const v = check(); if (v) close(v); } },
-        el('h2', {}, task ? `Edit · ${task.name}` : 'New task'),
         name, el('div', { class: 'row' }, limit, expiry), notes,
         el('div', { class: 'foot' }, hint, el('button', { class: 'btn', type: 'button', onclick: () => close(null) }, 'Cancel'), save));
       return [form];
@@ -551,7 +550,7 @@ export function createMiniTimer(app) {
       return [el('h2', {}, t.name),
         el('div', { class: 'menu', role: 'menu' },
           item('✏️ Edit', () => actions.editTask(taskId)),
-          item('➕ Add session', () => actions.logManual(taskId)),
+          item('➕ Session', () => actions.logManual(taskId)),
           item('📊 History', () => goHome(`#/history/${encodeURIComponent(taskId)}`)),
           item('🗄️ Archive', () => actions.archive(taskId), 'danger')),
         el('div', { class: 'foot' }, el('span', { class: 'hint' }, 'Esc to go back'), el('button', { class: 'btn', type: 'button', onclick: () => close(null) }, 'Back'))];
