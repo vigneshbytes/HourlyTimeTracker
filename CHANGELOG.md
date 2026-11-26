@@ -5,6 +5,14 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.11.0 — Major
+- Mini timer now packs the home view (the main app is unchanged):
+  - The running task is the biggest card, full width; click anywhere on it to stop (Enter/Space too). Paused shows Resume; idle shows the time and today's total.
+  - A scrollable grid of tasks in the same order as the home list, two lines each (name, total), red/yellow edges for expiring/near-limit. Two rows (4 tasks) visible at the smallest size, more columns when wider.
+  - Click a task to start it. If another is running, "Switch to …?" is asked inside the mini window. Undo after every start and stop.
+  - 🔍 search (or press / or Ctrl+F): filters by name and notes; Enter starts the first match, ↓ moves into the grid, arrow keys move between tasks, Esc clears then closes. Typing while on the grid jumps into search.
+  - ⌂ brings the full app forward on the task list.
+
 ## 0.10.1 — Minor
 - Top card: a "+ New task" button (where the greeting was) when nothing is running, and a ↗ mini-timer button that is always there, idle or running (next to ⋯ on the running card). It lights up while the mini timer is open.
 - The mini-timer button moved out of the header into the card (still under ☰ in a small window).
