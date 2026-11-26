@@ -23,6 +23,7 @@
       <img src="./icons/icon-192.png" alt="" width="24" height="24">
       <span class="brand-text">TimeTracker</span>
     </a>
+    <span class="streak" id="streak" role="img" hidden></span>
     <span class="topbar-status" id="topbar-status"></span>
     <nav class="topbar-actions" id="topbar-actions"></nav>
   </header>
@@ -35,7 +36,7 @@
     setTimeout(function () {
       if (window.__httBooted) return;
       var v = document.getElementById('view');
-      v.innerHTML = '<div class="card" style="margin-top:10vh"><h2>Taking too long?</h2><p>The saved copy of the app may be out of date. Repairing reloads the app files. Your tasks and logs are not affected.</p><button class="btn btn-primary" id="repair">Repair and reload</button></div>';
+      v.innerHTML = '<div class="card" style="margin-top:10vh"><h2>Taking too long?</h2><p>The saved copy of the app may be out of date. Repairing reloads the app files. Your tasks and sessions are not affected.</p><button class="btn btn-primary" id="repair">Repair and reload</button></div>';
       document.getElementById('repair').onclick = async function () {
         try {
           var regs = await navigator.serviceWorker.getRegistrations();

@@ -18,7 +18,14 @@ describe('overview stats', () => {
   it('totals today and this week', () => {
     expect(s.todayMs).toBe(2.5 * H);
     expect(s.weekMs).toBe(5.5 * H);
-    expect(s.todayLogs).toBe(3);
+    expect(s.todaySessions).toBe(3);
+  });
+  it('totals this month', () => { expect(s.monthMs).toBe(6.5 * H); });
+  it('averages over days that have tracked time', () => {
+    expect(s.trackedDays).toBe(4);
+    expect(s.dailyAvgMs).toBe(6.5 * H / 4);
+  });
+  it('has no average without sessions', () => { expect(overviewStats([], NOW).dailyAvgMs).toBe(0);
   });
   it('counts the streak of consecutive days', () => { expect(s.streak).toBe(3); });
   it('remembers when the last timed session ended', () => { expect(s.lastEnd).toBe(at(26, 11) + H / 2); });

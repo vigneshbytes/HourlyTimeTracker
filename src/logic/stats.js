@@ -10,17 +10,27 @@ export function startOfWeek(t) {
   return d.getTime();
 }
 
-// Summary numbers for the idle panel.
+export function startOfMonth(t) {
+  const d = new Date(t);
+  return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+}
+
+// Summary numbers for the idle panel, the History header and the streak badge.
+// dailyAvgMs = all tracked time ÷ the number of days that have any tracked time
+// (days off don't drag the average down).
 export function overviewStats(sessions, now = Date.now()) {
   const today = startOfDay(now);
   const week = startOfWeek(now);
-  let todayMs = 0, weekMs = 0, todayLogs = 0, lastEnd = null;
+  const month = startOfMonth(now);
+  let todayMs = 0, weekMs = 0, monthMs = 0, totalMs = 0, todaySessions = 0, lastEnd = null;
   const days = new Set();
   for (const s of sessions) {
     const t = sessionTime(s);
     const dur = sessionDuration(s, now);
-    if (t >= today) { todayMs += dur; todayLogs++; }
+    totalMs += dur;
+    if (t >= today) { todayMs += dur; todaySessions++; }
     if (t >= week) weekMs += dur;
+    if (t >= month) monthMs += dur;
     days.add(startOfDay(t));
     if (!s.manual && s.end != null && (lastEnd == null || s.end > lastEnd)) lastEnd = s.end;
   }
@@ -28,7 +38,8 @@ export function overviewStats(sessions, now = Date.now()) {
   let streak = 0;
   let d = days.has(today) ? today : today - DAY;
   while (days.has(startOfDay(d))) { streak++; d = startOfDay(d - DAY / 2); }
-  return { todayMs, weekMs, todayLogs, streak, lastEnd };
+  const dailyAvgMs = days.size ? totalMs / days.size : 0;
+  return { todayMs, weekMs, monthMs, todaySessions, dailyAvgMs, trackedDays: days.size, streak, lastEnd };
 }
 
 export const QUOTES = [

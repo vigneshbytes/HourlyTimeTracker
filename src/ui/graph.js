@@ -14,7 +14,7 @@ const s = (tag, attrs = {}) => {
 export function sessionGraph(sessions, { now = Date.now() } = {}) {
   const wrap = h('div', { class: 'graph-wrap' });
   if (!sessions.length) {
-    wrap.append(h('p', { class: 'muted graph-empty' }, 'No logs yet.'));
+    wrap.append(h('p', { class: 'muted graph-empty' }, 'No sessions yet.'));
     return wrap;
   }
   const days = new Map();
@@ -26,7 +26,7 @@ export function sessionGraph(sessions, { now = Date.now() } = {}) {
   const maxMs = Math.max(...sessions.map((x) => sessionDuration(x, now)), 60000);
 
   const BAR = 8, BAR_GAP = 5, DAY_PAD = 14, GAP_W = 22, TOP = 18, H = 150, LABEL = 34;
-  const svg = s('svg', { class: 'graph', role: 'img', 'aria-label': `Graph of ${sessions.length} logs` });
+  const svg = s('svg', { class: 'graph', role: 'img', 'aria-label': `Graph of ${sessions.length} sessions` });
   const g = s('g');
   svg.append(g);
   let x = 8, prevDay = null;
@@ -50,7 +50,7 @@ export function sessionGraph(sessions, { now = Date.now() } = {}) {
       const bar = s('rect', { x: bx, y: TOP + H - bh, width: BAR, height: bh, rx: BAR / 2, class: `bar bar-${kind}`, tabindex: 0 });
       const label = [
         fmtDuration(dur),
-        ses.manual ? (ses.dateProvided ? `Manual log · ${fmtDate(ses.start)}${ses.timeProvided ? ` ${fmtTime(ses.start)}` : ''}` : `Manual log (no date) · added ${fmtDate(ses.createdAt)}`)
+        ses.manual ? (ses.dateProvided ? `Manual session · ${fmtDate(ses.start)}${ses.timeProvided ? ` ${fmtTime(ses.start)}` : ''}` : `Manual session (no date) · added ${fmtDate(ses.createdAt)}`)
           : `${fmtDate(ses.start)} · ${fmtTime(ses.start)}–${ses.end ? fmtTime(ses.end) : 'now'}`,
       ];
       const show = () => {
@@ -74,7 +74,7 @@ export function sessionGraph(sessions, { now = Date.now() } = {}) {
     const lbl = s('text', { x: colX + colW / 2, y: TOP + H + 16, 'text-anchor': 'middle', class: 'graph-label' });
     lbl.textContent = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
     const cnt = s('text', { x: colX + colW / 2, y: TOP + H + 29, 'text-anchor': 'middle', class: 'graph-sub' });
-    cnt.textContent = list.length > 1 ? `${list.length} logs` : '';
+    cnt.textContent = list.length > 1 ? `${list.length} sessions` : '';
     g.append(lbl, cnt);
     x += Math.max(colW, 40) + DAY_PAD;
   }

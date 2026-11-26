@@ -2,6 +2,7 @@ import './styles.css';
 import { liveQuery } from 'dexie';
 import { openDatabase, requestPersistence } from './db/index.js';
 import { buildStats, sessionDuration } from './logic/tasks.js';
+import { overviewStats } from './logic/stats.js';
 import { fmtClock, fmtDuration } from './logic/time.js';
 import { h, svgIcon, $ } from './ui/dom.js';
 import { toast } from './ui/dialogs.js';
@@ -29,6 +30,23 @@ const app = {
 
 function recompute() {
   app.stats = buildStats(app.data.tasks, app.data.sessions, app.data.settings);
+  app.overview = overviewStats(app.data.sessions);
+  renderStreak();
+}
+
+// Streak badge next to the logo: consecutive days with tracked time.
+function renderStreak() {
+  const el = $('#streak');
+  const n = app.overview?.streak ?? 0;
+  el.hidden = n === 0;
+  if (!n) return;
+  const text = `🔥 ${n}`;
+  if (el.textContent !== text) {
+    el.textContent = text;
+    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+  }
+  el.title = `${n}-day streak: you tracked time ${n === 1 ? 'today' : `${n} days in a row`}`;
+  el.setAttribute('aria-label', el.title);
 }
 
 // ── Routing ────────────────────────────────────────────────────────────────
@@ -109,7 +127,10 @@ async function resumeIfPaused() {
 }
 
 let lastStatsAt = 0;
+let dayKey = new Date().toDateString();
 function tick() {
+  // A new day can change today's totals and the streak, even with nothing running.
+  if (new Date().toDateString() !== dayKey) { dayKey = new Date().toDateString(); recompute(); app.view?.render(); }
   const running = app.running();
   const status = $('#topbar-status');
   const onHome = app.viewKey === 'tasks';

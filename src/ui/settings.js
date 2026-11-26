@@ -47,7 +47,7 @@ export function createSettingsView(app) {
       h('label', { class: 'field inline' }, h('span', { class: 'field-label' }, 'Warn about expiry this many days ahead'), warnDays),
       h('a', { href: '#/settings/archive', class: 'btn' }, svgIcon('archive', 16), ' Bulk archive…')),
     card('Backup',
-      h('p', { class: 'muted small' }, 'A readable file with all tasks and logs. Importing a backup adds anything missing and never deletes or overwrites existing data.'),
+      h('p', { class: 'muted small' }, 'A readable file with all tasks and sessions. Importing a backup adds anything missing and never deletes or overwrites existing data.'),
       h('div', { class: 'row' },
         btn('Export backup', async () => { try { downloadJson(await exportBackup(app.db), `timetracker-backup-${stamp()}.json`); } catch (e) { errorToast(e); } }),
         btn('Import backup…', async () => {
@@ -55,7 +55,7 @@ export function createSettingsView(app) {
             const data = await pickJsonFile();
             if (!data) return;
             const r = await importBackup(app.db, data);
-            toast(`Imported ${r.tasks} tasks and ${r.sessions} logs${r.skipped ? ` (${r.skipped} already present)` : ''}`);
+            toast(`Imported ${r.tasks} tasks and ${r.sessions} sessions${r.skipped ? ` (${r.skipped} already present)` : ''}`);
           } catch (e) { errorToast(e); }
         }))),
     card('Database',
@@ -67,7 +67,7 @@ export function createSettingsView(app) {
             const data = await pickJsonFile();
             if (!data) return;
             const n = (data.tables?.tasks?.length ?? '?');
-            const ok = await multiStepErase({ what: `Importing this file replaces ALL current tasks and logs with the ${n} task(s) in the file.`, phrase: 'REPLACE MY DATA', confirmText: 'Replace everything' });
+            const ok = await multiStepErase({ what: `Importing this file replaces ALL current tasks and sessions with the ${n} task(s) in the file.`, phrase: 'REPLACE MY DATA', confirmText: 'Replace everything' });
             if (!ok) return;
             await importDatabase(app.db, data);
             toast('Database imported');
@@ -80,9 +80,9 @@ export function createSettingsView(app) {
         h('strong', null, 'Persistent storage'), ' asks the browser never to clear it automatically. It is recommended and costs nothing. Your data is only removed if you erase it here or clear site data in the browser settings.'),
       persistBtn),
     card('Danger zone',
-      h('p', { class: 'muted small' }, 'Erase every task, log and setting stored in this browser.'),
+      h('p', { class: 'muted small' }, 'Erase every task, session and setting stored in this browser.'),
       btn('Erase all data…', async () => {
-        const ok = await multiStepErase({ what: `This permanently deletes ${app.data.tasks.length} task(s) and ${app.data.sessions.length} log(s).` });
+        const ok = await multiStepErase({ what: `This permanently deletes ${app.data.tasks.length} task(s) and ${app.data.sessions.length} session(s).` });
         if (!ok) return;
         await app.repo.eraseAll();
         toast('All data erased');

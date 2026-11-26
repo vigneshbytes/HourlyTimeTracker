@@ -5,6 +5,14 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.9.0 — Major
+- Small window: the top card is now 84px instead of 128px (time, date and one row of stats when idle; name, timer and Stop when running). Smaller header buttons.
+- Idle card stats are now Today · Sessions today · Daily avg. Daily avg = all tracked time ÷ days with any tracked time, so days off don't lower it.
+- New 🔥 streak badge next to the logo (days in a row with tracked time), on every page.
+- History opens with This week and This month totals.
+- "Logs" are called "sessions" everywhere ("Add session manually", "Sessions today", etc.).
+- Fix: toasts were squeezed to half the screen width on small phones; the header no longer overflows on narrow phones.
+
 ## 0.8.1 — Minor
 - Idle card date: no year, 3-letter month (e.g. "Thursday, Nov 26" or "Thursday, 26 Nov", following the device's language).
 - Quotes are no longer cut off on phones. The quote uses all the free space in the card and its text shrinks slightly if needed, so a long quote never changes the card size or moves anything around it.

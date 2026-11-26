@@ -99,14 +99,14 @@ export function createTaskListView(app) {
 
     const st = overviewStats(app.data.sessions);
     statsEl.replaceChildren(...[
-      ['Today', fmtDuration(st.todayMs)],
-      ['This week', fmtDuration(st.weekMs)],
-      ['Logs today', String(st.todayLogs)],
-      ['Day streak', st.streak ? `${st.streak} ${st.streak === 1 ? 'day' : 'days'}` : '–'],
-    ].map(([label, value], i) => {
+      ['Today', fmtDuration(st.todayMs), 'Time tracked today'],
+      ['Sessions today', String(st.todaySessions), 'Timed or manual sessions today'],
+      ['Daily avg', st.trackedDays ? fmtDuration(st.dailyAvgMs) : '–',
+        st.trackedDays ? `Average time per tracked day (${st.trackedDays} ${st.trackedDays === 1 ? 'day' : 'days'} so far; days off are not counted)` : 'Shows after your first session'],
+    ].map(([label, value, title], i) => {
       const prevVal = statsEl.children[i]?.querySelector('.stat-value')?.textContent;
       const dd = h('dd', { class: `stat-value${prevVal != null && prevVal !== value ? ' changed' : ''}` }, value);
-      return h('div', { class: 'stat' }, h('dt', { class: 'stat-label' }, label), dd);
+      return h('div', { class: 'stat', title }, h('dt', { class: 'stat-label' }, label), dd);
     }));
   }
 
@@ -143,7 +143,7 @@ export function createTaskListView(app) {
       anchor, asSheet, title: task.name,
       items: [
         { label: 'Edit', icon: 'edit', onClick: () => app.actions.editTask(task.id) },
-        { label: 'Log session manually', icon: 'clock', onClick: () => app.actions.logManual(task.id) },
+        { label: 'Add session manually', icon: 'clock', onClick: () => app.actions.logManual(task.id) },
         { label: 'View history', icon: 'history', onClick: () => app.navigate(`#/history/${task.id}`) },
         { label: 'Archive', icon: 'archive', onClick: () => app.actions.archive(task.id) },
       ],
@@ -207,7 +207,7 @@ export function createTaskListView(app) {
     const parts = [];
     parts.push(h('span', { class: 'js-total', dataset: { task: task.id } }, fmtDuration(st.totalMs)));
     if (task.maxHours) parts.push(h('span', null, ` of ${fmtHours(task.maxHours)}`));
-    parts.push(h('span', null, ` · ${st.sessions.length} ${st.sessions.length === 1 ? 'log' : 'logs'}`));
+    parts.push(h('span', null, ` · ${st.sessions.length} ${st.sessions.length === 1 ? 'session' : 'sessions'}`));
     if (task.expiresAt && !st.expiring) parts.push(h('span', null, ` · ${relativeExpiry(task.expiresAt).toLowerCase()}`));
     metaEl.replaceChildren(...parts);
 

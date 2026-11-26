@@ -11,9 +11,9 @@ your device.
 - **New tasks start right away.** After creating a task you're taken to the
   task list and it starts timing. A 10-second button, "Create only, don't track
   yet", undoes that and turns on create-only mode for 15 minutes.
-- **Idle panel.** When nothing is running, the top slot shows a greeting and
-  date, the last task worked on (with Continue), today/week totals, logs today,
-  day streak and a fresh quote each time you go idle (from the free QuoteSlate
+- **Idle panel.** When nothing is running, the top slot shows the time and
+  date, today's total, sessions today, your daily average (total time ÷ days
+  you tracked anything) and a fresh quote each time you go idle (from the free QuoteSlate
   or DummyJSON APIs; a built-in quote when offline). New users see a how-to.
 - **One tap to start.** Tap a task to start timing it. Only one task runs at a
   time; tapping another asks before switching. An Undo bar appears for 5 s and
@@ -22,20 +22,21 @@ your device.
   with a big Stop button. The whole card is the stop button.
 - **Top-bar timer + pause.** On History and Settings the top bar shows the
   running task's name and time, with the only Pause button. A paused task
-  resumes (as a new log) when you return to the task list, with a short
+  resumes (as a new session) when you return to the task list, with a short
   animation, or right away with Resume.
 - **Smart order.** Running task → tasks about to expire (soonest first) → most
   recently used.
 - **Colours.** Red when a task is about to expire or has expired (it moves up).
   Yellow at 70% of the task's max hours (it doesn't move). "Over limit" badge
   at 100%; timing continues.
-- **Options menu.** Hover a card (mouse) or press and hold (touch): Edit, Log
+- **Streak.** A 🔥 badge next to the logo counts days in a row with tracked time.
+- **Options menu.** Hover a card (mouse) or press and hold (touch): Edit, Add
   session manually, View history, Archive.
-- **Manual logs.** Enter hours, optionally a date and time. Logs without a
+- **Manual sessions.** Enter hours, optionally a date and time. Sessions without a
   date are placed on the day you added them and shown in a different colour.
-- **History.** All tasks, filter Active/Archived, sort by created or completed
+- **History.** This week's and this month's totals at the top. All tasks, filter Active/Archived, sort by created or completed
   date, search names and notes. Each task shows a big total and a graph with
-  one line per log (hover or tap a line for exact time). Edit or delete logs,
+  one line per session (hover or tap a line for exact time). Edit or delete sessions,
   unarchive tasks, permanently delete archived tasks (type the name to confirm).
 - **Settings.** Expiry warning days, bulk archive (oldest first, Shift+click to
   select a range), backup export/import (merge), database export/import

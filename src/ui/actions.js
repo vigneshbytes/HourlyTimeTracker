@@ -84,7 +84,7 @@ export function createActions(app) {
       const v = await manualLogForm(task);
       if (!v) return;
       await repo.logManual(taskId, v);
-      toast(`Logged ${fmtDuration(v.hours * 3600000)} on ${task.name}`, { subtle: true });
+      toast(`Added a ${fmtDuration(v.hours * 3600000)} session to ${task.name}`, { subtle: true });
     }),
 
     editSession: safe(async (session) => {
@@ -99,10 +99,10 @@ export function createActions(app) {
     }),
 
     deleteSession: safe(async (session) => {
-      const ok = await confirmDialog({ title: 'Delete this log?', message: 'The time in this session will be removed from the task total.', confirmText: 'Delete log', danger: true });
+      const ok = await confirmDialog({ title: 'Delete this session?', message: 'The time in this session will be removed from the task total.', confirmText: 'Delete session', danger: true });
       if (!ok) return;
       await repo.deleteSession(session.id);
-      toast('Log deleted', { action: 'Undo', onAction: safe(() => repo.db.sessions.add(session)) });
+      toast('Session deleted', { action: 'Undo', onAction: safe(() => repo.db.sessions.add(session)) });
     }),
 
     archive: safe(async (taskIds) => {
@@ -129,7 +129,7 @@ export function createActions(app) {
       const task = app.data.tasks.find((t) => t.id === taskId);
       const ok = await typeToConfirm({
         title: 'Delete task permanently?',
-        message: `"${task.name}" and all of its logs will be erased. This cannot be undone.`,
+        message: `"${task.name}" and all of its sessions will be erased. This cannot be undone.`,
         phrase: task.name,
         confirmText: 'Delete forever',
       });

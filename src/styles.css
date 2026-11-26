@@ -162,7 +162,7 @@ html[data-mode=touch] .touch-hint { display: block; }
 @keyframes pop { from { opacity: 0; transform: scale(.97); } }
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 70; transform: translate(-50%, 20px); opacity: 0;
   display: flex; align-items: center; gap: 14px; background: #1f2937; color: #fff; padding: 10px 12px 10px 16px; border-radius: 12px; box-shadow: var(--shadow-lg);
-  max-width: calc(100vw - 24px); overflow: hidden; transition: opacity .2s, transform .2s; }
+  width: max-content; max-width: calc(100vw - 24px); overflow: hidden; transition: opacity .2s, transform .2s; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast-action { background: none; border: 0; color: #8ab4ff; font-weight: 700; cursor: pointer; padding: 6px 8px; border-radius: 8px; }
 .toast-action:hover { background: rgb(255 255 255 / .1); }
@@ -285,7 +285,7 @@ html[data-mode=widget] .toast { font-size: .85rem; bottom: 8px; }
 .continue-btn:hover { background: var(--accent-soft); }
 .idle-hint { margin: 0; color: var(--muted); font-size: .88rem; }
 /* Stats: plain figures on a strip with hairline dividers (not buttons). */
-.idle-stats { display: grid; grid-template-columns: repeat(4, 1fr); margin: 4px 0 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.idle-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 4px 0 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .stat { display: flex; flex-direction: column-reverse; align-items: center; text-align: center; padding: 0 8px; }
 .stat + .stat { border-left: 1px solid var(--line); }
 .stat-value { margin: 0; font-weight: 700; font-size: 1.35rem; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
@@ -302,7 +302,7 @@ html[data-mode=widget] .toast { font-size: .85rem; bottom: 8px; }
 html[data-mode=widget] .idle-panel { padding: 8px 10px; gap: 4px; margin-bottom: 6px; }
 html[data-mode=widget] .idle-greet { font-size: 1rem; }
 html[data-mode=widget] .idle-quote, html[data-mode=widget] .idle-hint { display: none; }
-html[data-mode=widget] .idle-stats { grid-template-columns: repeat(4, 1fr); padding: 6px 0; }
+html[data-mode=widget] .idle-stats { grid-template-columns: repeat(3, 1fr); padding: 6px 0; }
 html[data-mode=widget] .stat:nth-child(3) { border-left: 1px solid var(--line); }
 html[data-mode=widget] .stat { padding: 0 4px; }
 html[data-mode=widget] .stat-value { font-size: .9rem; }
@@ -385,7 +385,7 @@ main:has(> .view-history) { max-width: 1040px; }
 :root { --slot-h: 280px; }
 @media (max-width: 640px) { :root { --slot-h: 304px; } }
 @media (max-width: 380px) { :root { --slot-h: 330px; } }
-html[data-mode=widget] { --slot-h: 128px; }
+html[data-mode=widget] { --slot-h: 84px; }
 .idle-panel, .task-card.is-running { height: var(--slot-h); overflow: hidden; }
 .idle-panel { grid-template-rows: auto auto minmax(0, 1fr); align-content: stretch; }
 .idle-panel.intro { grid-template-rows: auto 1fr auto; }
@@ -503,3 +503,36 @@ html:not([data-mode=touch]) .task-card:not(.is-running):hover { transform: trans
 /* Help popover arrow-in already fades; add a soft scale. */
 .help-pop { transform-origin: top right; }
 .help-pop:not(.show) { transform: translateY(-4px) scale(.98); }
+
+/* Streak badge next to the logo */
+.streak { display: inline-flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 999px; background: #fff3e6; color: #9a4a00; font-weight: 700; font-size: .85rem; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: default; border: 1px solid #ffd9b0; }
+.streak.bump { animation: streak-bump .45s cubic-bezier(.2, .8, .2, 1); }
+@keyframes streak-bump { 40% { transform: scale(1.15); } }
+html[data-mode=widget] .streak { font-size: .75rem; padding: 1px 6px; }
+
+/* History: period totals */
+.period-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 0 0 12px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.period { display: grid; justify-items: center; gap: 2px; }
+.period + .period { border-left: 1px solid var(--line); }
+.period-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.period-value { font-size: 1.6rem; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+html[data-mode=widget] .period-totals { padding: 6px 0; margin-bottom: 8px; }
+html[data-mode=widget] .period-value { font-size: 1.15rem; }
+@media (prefers-reduced-motion: reduce) { .streak.bump { animation: none; } }
+
+/* Small window (widget): one compact slot, 84px. Idle = time/date + one row of stats; running = name + timer with Stop beside it. */
+html[data-mode=widget] .idle-panel:not(.intro) { grid-template-rows: auto auto; align-content: center; gap: 4px; padding: 6px 10px; border-width: 1.5px; }
+html[data-mode=widget] .idle-when { gap: 8px; }
+html[data-mode=widget] .idle-stats { margin: 0; padding: 4px 0 0; border-bottom: 0; }
+html[data-mode=widget] .stat-value { font-size: .88rem; line-height: 1.2; }
+html[data-mode=widget] .task-card.is-running .task-main { padding: 6px 40px 6px 12px; gap: 0; align-content: center; }
+html[data-mode=widget] .task-card.is-running .task-running-row { flex-wrap: nowrap; }
+html[data-mode=widget] .task-card.is-running .task-name { font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-mode=widget] .task-card.is-running .task-timer { font-size: 1.5rem; line-height: 1.15; }
+html[data-mode=widget] .task-card.is-running .stop-btn { padding: 7px 12px; font-size: .88rem; }
+html[data-mode=widget] .topbar { padding-top: 3px; padding-bottom: 3px; }
+html[data-mode=widget] .topbar .icon-btn:not(.help-btn) { width: 32px; height: 32px; }
+html[data-mode=widget] .help-btn { margin: 3px; }
+/* Narrow phones: the logo alone carries the brand so the streak and buttons fit on one line. */
+@media (max-width: 430px) { .topbar:has(.streak:not([hidden])) .brand-text { display: none; } }
+@media (max-width: 360px) { .brand-text { display: none; } }

@@ -11,7 +11,7 @@ export function howToSteps() {
 
 export function moreTips() {
   return h('ul', { class: 'howto tips' },
-    h('li', null, h('span', { class: 'howto-emoji more-dots' }, '⋯'), h('span', null, 'Hover a task (or press and hold on a phone) to edit it, log time by hand, or archive it.')),
+    h('li', null, h('span', { class: 'howto-emoji more-dots' }, '⋯'), h('span', null, 'Hover a task (or press and hold on a phone) to edit it, add a session by hand, or archive it.')),
     h('li', null, h('span', { class: 'howto-emoji' }, '⏸️'), h('span', null, 'In History or Settings, pause from the top bar. Tracking resumes when you return.')),
     h('li', null, h('span', { class: 'swatch swatch-red', 'aria-hidden': 'true' }), h('span', null, h('strong', null, 'Red card'), ': expires soon (moves to the top).')),
     h('li', null, h('span', { class: 'swatch swatch-yellow', 'aria-hidden': 'true' }), h('span', null, h('strong', null, 'Yellow card'), ': 70% of its max hours used.')),

@@ -48,14 +48,14 @@ export function taskForm(task = null) {
 // Manual session log. Resolves with { hours, date, time } or null.
 export function manualLogForm(task, session = null) {
   return modal({
-    title: session ? 'Edit manual log' : `Log session · ${task.name}`,
+    title: session ? 'Edit manual session' : `Add session · ${task.name}`,
     build: (close) => {
       const hours = h('input', { type: 'text', inputmode: 'decimal', autofocus: true, placeholder: 'e.g. 1.5 or 1:30',
         value: session ? String(+(session.durationMs / 3600000).toFixed(4)) : '' });
       const date = h('input', { type: 'date', value: session?.dateProvided && session.start ? toInputDate(session.start) : '' });
       const time = h('input', { type: 'time', value: session?.timeProvided && session.start ? toInputTime(session.start) : '' });
       const fHours = field('Hours (required)', hours, '');
-      const save = h('button', { class: 'btn btn-primary', type: 'submit' }, session ? 'Save' : 'Log session');
+      const save = h('button', { class: 'btn btn-primary', type: 'submit' }, session ? 'Save' : 'Add session');
       const update = () => {
         const v = parseHours(hours.value);
         const ok = v > 0;
@@ -69,7 +69,7 @@ export function manualLogForm(task, session = null) {
       return h('form', { class: 'form', onsubmit: (e) => { e.preventDefault(); const v = update(); if (v) close(v); } },
         fHours.el,
         h('div', { class: 'field-row' }, field('Start date', date).el, field('Start time', time).el),
-        h('p', { class: 'hint' }, 'Date and time are optional. Without a date, the log is placed on the day you add it and shown in a different colour.'),
+        h('p', { class: 'hint' }, 'Date and time are optional. Without a date, the session is placed on the day you add it and shown in a different colour.'),
         h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: () => close(null) }, 'Cancel'), save));
     },
   });
