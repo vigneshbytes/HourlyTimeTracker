@@ -5,6 +5,12 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.6.0 — Major
+- Welcome card rewritten with emojis and simpler wording.
+- New ? button next to Settings: hover (or tap) for a quick how-to and tips.
+- The top card keeps one fixed size whether it shows the welcome, idle or running state; it only changes with the window/layout.
+- Long toast messages are limited to two lines.
+
 ## 0.5.2 — Minor
 - Versions are tracked by commit names and this changelog (no Git tags).
 

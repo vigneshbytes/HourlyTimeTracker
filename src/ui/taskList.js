@@ -4,6 +4,7 @@ import { sortMainList, sessionDuration } from '../logic/tasks.js';
 import { fmtClock, fmtDuration, fmtHours, fmtTime, relativeExpiry } from '../logic/time.js';
 import { overviewStats } from '../logic/stats.js';
 import { fetchQuote } from '../logic/quotes.js';
+import { howToSteps } from './help.js';
 
 // Main view: the task list. Cards are keyed by task id and re-used between
 // renders so re-ordering can be animated (FLIP technique).
@@ -28,14 +29,11 @@ export function createTaskListView(app) {
     h('div', { class: 'idle-top' }, greetEl, dateEl),
     lastEl, statsEl, quoteEl);
   const intro = h('div', { class: 'idle-panel intro' },
-    h('p', { class: 'intro-title' }, 'Track time on your tasks'),
-    h('ol', { class: 'intro-steps' },
-      h('li', null, 'Create a task with ', h('strong', null, '+'), '. It starts timing right away.'),
-      h('li', null, 'Tap a task to start it. Only one runs at a time.'),
-      h('li', null, 'Tap the running task (or Stop) to stop.'),
-      h('li', null, 'See totals and every session in ', h('strong', null, 'History'), '.')),
-    h('p', { class: 'idle-hint' }, 'Your tasks and times stay on this device.'),
-    h('button', { class: 'btn btn-primary', type: 'button', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), ' New task'));
+    h('p', { class: 'intro-title' }, '👋 Welcome! Let’s track your time'),
+    howToSteps(),
+    h('div', { class: 'intro-foot' },
+      h('button', { class: 'btn btn-primary', type: 'button', onclick: () => app.actions.newTask() }, svgIcon('plus', 18), ' Add your first task'),
+      h('span', { class: 'idle-hint' }, '🔒 Private: stays on this device.')));
   const createOnlyBar = h('div', { class: 'create-only-bar', role: 'status' });
   root.append(createOnlyBar, hero, intro, list, empty, h('p', { class: 'touch-hint' }, 'Press and hold a task for more options.'));
 
@@ -79,9 +77,10 @@ export function createTaskListView(app) {
     const lastTask = last && app.data.tasks.find((x) => x.id === last.taskId && x.status === 'active');
     if (lastTask) {
       lastEl.replaceChildren(
-        h('span', { class: 'muted' }, 'Last worked on '),
-        h('strong', null, lastTask.name),
-        last.timed ? h('span', { class: 'muted' }, ` · stopped ${fmtTime(last.t)}`) : null,
+        h('span', { class: 'last-text' },
+          h('span', { class: 'muted' }, 'Last: '),
+          h('strong', null, lastTask.name),
+          last.timed ? h('span', { class: 'muted' }, ` · stopped ${fmtTime(last.t)}`) : null),
         h('button', { type: 'button', class: 'continue-btn', onclick: () => app.actions.activate(lastTask.id) }, svgIcon('play', 14), ' Continue'));
     } else {
       lastEl.replaceChildren(h('span', { class: 'muted' }, 'Nothing running. Tap a task below to start tracking.'));

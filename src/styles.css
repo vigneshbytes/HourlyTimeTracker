@@ -275,7 +275,9 @@ html[data-mode=widget] .toast { font-size: .85rem; bottom: 8px; }
 .idle-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .idle-greet { font-size: 1.3rem; font-weight: 700; letter-spacing: -.01em; }
 .idle-date { color: var(--muted); font-size: .88rem; }
-.idle-last { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .92rem; }
+.idle-last { margin: 0; display: flex; align-items: center; gap: 6px; font-size: .92rem; min-width: 0; }
+.last-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.continue-btn { flex: none; }
 .continue-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; border: 0; background: none; color: var(--accent-ink); font-weight: 650; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
 .continue-btn:hover { background: var(--accent-soft); }
 .idle-hint { margin: 0; color: var(--muted); font-size: .88rem; }
@@ -292,11 +294,8 @@ html[data-mode=widget] .toast { font-size: .85rem; bottom: 8px; }
 .q-text { position: relative; margin: 10px 0 6px; font: italic 1.08rem/1.5 Georgia, 'Times New Roman', serif; color: #33404d; text-wrap: balance; }
 .q-who { margin: 0; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
 .q-who::before { content: '— '; }
-.intro-title { margin: 0; font-weight: 700; font-size: 1.1rem; }
-.intro-steps { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
-.intro .btn { justify-self: start; }
 .create-only-bar { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #fff7e0; border: 1px solid #f0d58a; color: #5c4400; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: .88rem; }
-@media (max-width: 520px) { .idle-stats { grid-template-columns: repeat(2, 1fr); row-gap: 10px; } .stat:nth-child(3) { border-left: 0; } .stat-value { font-size: 1.1rem; } }
+@media (max-width: 520px) { .stat { padding: 0 4px; } .stat-value { font-size: 1.05rem; } .stat-label { font-size: .58rem; letter-spacing: .04em; } .q-text { -webkit-line-clamp: 2; font-size: 1rem; } .idle-greet { font-size: 1.15rem; } .howto { font-size: .92rem; gap: 5px; } .intro-foot { gap: 6px; } }
 html[data-mode=widget] .idle-panel { padding: 8px 10px; gap: 4px; margin-bottom: 6px; }
 html[data-mode=widget] .idle-greet { font-size: 1rem; }
 html[data-mode=widget] .idle-date, html[data-mode=widget] .idle-last { display: none; }
@@ -306,7 +305,6 @@ html[data-mode=widget] .stat:nth-child(3) { border-left: 1px solid var(--line); 
 html[data-mode=widget] .stat { padding: 0 4px; }
 html[data-mode=widget] .stat-value { font-size: .9rem; }
 html[data-mode=widget] .stat-label { font-size: .55rem; letter-spacing: .04em; }
-html[data-mode=widget] .intro-steps { font-size: .85rem; }
 
 /* ── Top-bar timer (shown away from the task list) ── */
 .topbar-status { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
@@ -379,3 +377,51 @@ main:has(> .view-history) { max-width: 1040px; }
 .toast-subtle .toast-bar { height: 2px; background: #c9d3df; }
 .toast-error { background: var(--red); }
 .toast-error .toast-bar { background: rgb(255 255 255 / .5); }
+
+/* ── Top slot: same size for welcome, idle and running states ─────────
+   Height changes only with the window/layout, never with the state.   */
+:root { --slot-h: 280px; }
+@media (max-width: 640px) { :root { --slot-h: 304px; } }
+@media (max-width: 380px) { :root { --slot-h: 330px; } }
+html[data-mode=widget] { --slot-h: 128px; }
+.idle-panel, .task-card.is-running { height: var(--slot-h); overflow: hidden; }
+.idle-panel { grid-template-rows: auto auto auto 1fr; align-content: start; }
+.idle-panel.intro { grid-template-rows: auto 1fr auto; }
+.task-card.is-running .task-main { height: 100%; align-content: center; }
+.idle-quote { align-self: center; }
+.q-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html[data-mode=widget] .task-card.is-running .task-meta, html[data-mode=widget] .task-card.is-running .progress { display: none; }
+html[data-mode=widget] .task-card.is-running .task-main { gap: 2px; padding-top: 6px; padding-bottom: 6px; }
+
+/* Welcome card */
+.intro-title { margin: 0; font-weight: 700; font-size: 1.15rem; }
+.howto { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; align-content: center; }
+.howto li { display: grid; grid-template-columns: 26px 1fr; align-items: start; gap: 6px; line-height: 1.4; }
+.howto-emoji { font-size: 1.05rem; text-align: center; line-height: 1.35; }
+.intro-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+html[data-mode=widget] .intro .howto, html[data-mode=widget] .intro .idle-hint { display: none; }
+html[data-mode=widget] .intro-title { font-size: .95rem; }
+html[data-mode=widget] .idle-panel.intro { grid-template-rows: auto auto; align-content: center; }
+
+/* "?" help */
+.help-wrap { position: relative; display: inline-flex; }
+.help-btn { font-weight: 800; font-size: 1rem; color: var(--muted); border: 1.5px solid currentColor; width: 26px; height: 26px; border-radius: 50%; margin: 6px; }
+html[data-mode=touch] .help-btn { width: 28px; height: 28px; margin: 8px; }
+.help-btn:hover, .help-btn[aria-expanded=true] { color: var(--accent); background: var(--accent-soft); }
+.help-pop { position: absolute; right: -40px; top: calc(100% + 8px); z-index: 70; width: min(360px, calc(100vw - 20px)); background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-lg);
+  padding: 14px 16px; display: grid; gap: 8px; font-size: .88rem; opacity: 0; transform: translateY(-4px); transition: opacity .15s, transform .15s; max-height: calc(100dvh - 80px); overflow: auto; }
+.help-pop.show { opacity: 1; transform: none; }
+.help-title { margin: 0; font-weight: 700; font-size: 1rem; }
+.help-sub { margin: 4px 0 0; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.help-pop .howto { gap: 6px; }
+html[data-mode=widget] .help-pop { position: fixed; right: 8px; left: 8px; top: 44px; width: auto; }
+@media (max-width: 480px) { .help-pop { position: fixed; left: 10px; right: 10px; top: 56px; width: auto; } }
+
+.toast-subtle { border-radius: 14px; max-width: min(480px, calc(100vw - 24px)); }
+.toast-msg { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Running card fills the fixed slot: larger type. */
+html:not([data-mode=widget]) .task-card.is-running .task-name { font-size: 1.4rem; }
+html:not([data-mode=widget]) .task-card.is-running .task-timer { font-size: clamp(2.6rem, 9vw, 4rem); }
+html:not([data-mode=widget]) .task-card.is-running .stop-btn { padding: 14px 28px; font-size: 1.15rem; }
+html:not([data-mode=widget]) .task-card.is-running .task-main { gap: 12px; }

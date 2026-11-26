@@ -13,6 +13,9 @@ import { createSettingsView, createBulkArchiveView } from './ui/settings.js';
 import { installDarkGuard } from './ui/darkguard.js';
 import { setupLayout } from './ui/layout.js';
 import { setupInstances } from './ui/instances.js';
+import { helpButton } from './ui/help.js';
+
+const helpBtn = helpButton();
 
 const app = {
   version: __APP_VERSION__,
@@ -68,11 +71,12 @@ function renderChrome() {
         { label: 'Settings', icon: 'settings', onClick: () => app.navigate('#/settings') },
       ],
     }));
-    nav.replaceChildren(menuBtn);
+    nav.replaceChildren(helpBtn, menuBtn);
   } else {
     nav.replaceChildren(
       h('button', { type: 'button', class: 'icon-btn add-btn', 'aria-label': 'New task', title: 'New task', onclick: () => app.actions.newTask() }, svgIcon('plus')),
       link('#/history', 'history', 'History', section === 'history' || section === 'detail'),
+      helpBtn,
       link('#/settings', 'settings', 'Settings', section === 'settings' || section === 'bulk'));
   }
 }
