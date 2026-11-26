@@ -1,0 +1,22 @@
+{
+  "name": "hourlytimetracker",
+  "private": true,
+  "version": "0.2.0",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dexie": "^4.4.7"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.8",
+    "jsdom": "^26.0.0",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.2"
+  }
+}

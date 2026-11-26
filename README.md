@@ -1,74 +1,86 @@
 # ⏱ TimeTracker
 
-An offline-first time tracker for hourly-paid projects. It is a static Progressive Web App (PWA): there is no backend, no account and no server-side storage. Every feature runs in your browser and all data stays on your device.
+A fast, offline-first time tracker for hourly tasks. It's a Progressive Web App
+(PWA) with **no backend**: everything runs in your browser and all data stays on
+your device.
 
 **Live app:** https://vigneshbytes.github.io/HourlyTimeTracker/
 
+## Features
+
+- **One tap to start.** Tap a task to start timing it. Only one task runs at a
+  time; tapping another asks before switching. An Undo bar appears for 5 s and
+  sessions under 5 s are discarded.
+- **Running task on top.** The running task's card grows and moves to the top
+  with a big Stop button. The whole card is the stop button.
+- **Smart order.** Running task → tasks about to expire (soonest first) → most
+  recently used.
+- **Colours.** Red when a task is about to expire or has expired (it moves up).
+  Yellow at 70% of the task's max hours (it doesn't move). "Over limit" badge
+  at 100%; timing continues.
+- **Options menu.** Hover a card (mouse) or press and hold (touch): Edit, Log
+  session manually, View history, Archive.
+- **Manual logs.** Enter hours, optionally a date and time. Logs without a
+  date are placed on the day you added them and shown in a different colour.
+- **History.** All tasks, filter Active/Archived, sort by created or completed
+  date, search names and notes. Each task shows a big total and a graph with
+  one line per log (hover or tap a line for exact time). Edit or delete logs,
+  unarchive tasks, permanently delete archived tasks (type the name to confirm).
+- **Settings.** Expiry warning days, bulk archive (oldest first, Shift+click to
+  select a range), backup export/import (merge), database export/import
+  (replace), storage status, erase all data (3-step confirmation).
+- **Three layouts.** Phone/tablet (touch), desktop, and a compact **widget**
+  layout when the desktop app window is shrunk small. Layout is chosen by input
+  type first, so a small desktop window never behaves like a phone.
+- **Multiple windows.** If the app is open twice, it offers to close the
+  others; otherwise all windows stay in sync live.
+- **Light theme only.** Browser auto-dark and dark-mode extensions are blocked.
+
 ## Install it
 
-- **Desktop (Chrome, Edge):** open the live app and click **Install app** in the header, or the install icon in the address bar.
-- **Android (Chrome):** menu ⋮ → **Install app** / **Add to Home screen**.
+- **Desktop (Chrome, Edge):** click the install icon in the address bar.
+- **Android:** browser menu ⋮ → **Install app** / **Add to Home screen**.
 - **iPhone / iPad (Safari):** Share → **Add to Home Screen**.
 
-Once installed it opens in its own window and works with no internet connection.
+## How it's built
 
-## Architecture
-
-| Concern | Choice |
+| Part | Choice |
 | --- | --- |
-| Hosting | GitHub Pages (free static hosting), deployed by GitHub Actions on every push to `main` |
-| Runtime | Plain HTML, CSS and ES modules. No build step, no framework, no dependencies |
-| Offline | Service worker (`sw.js`) caches the app shell; cache name is stamped with the commit SHA on deploy |
-| Installability | `manifest.webmanifest` + 192/512 px and maskable icons. All paths are relative so it works under the `/HourlyTimeTracker/` subpath |
-| Storage | IndexedDB (`timetracker` database), scoped to the site's origin |
-| Durability | `navigator.storage.persist()` is requested on first load so the browser won't evict data under storage pressure |
-| Data safety | Every erase goes through a 3-step confirmation: explain + count → tick "I understand" → type `DELETE ALL MY DATA` (paste disabled) |
-
-### Data model (v1)
-
-- `projects`: `{ id, name, hourlyRate, currency, archived, createdAt }`
-- `entries`: `{ id, projectId, start, end, note }` (indexed by `projectId` and `start`)
-- `meta`: `{ key, value }` for settings and bookkeeping
-
-Schema changes are handled by bumping `DB_VERSION` in `js/storage.js` and adding a migration step in `upgrade()`. Existing data is never dropped by an upgrade.
-
-### Important notes about browser storage
-
-- Data lives in **this browser on this device** only. A different browser, device or a private window starts empty.
-- Clearing site data from the browser's own settings will delete it; the app can't prevent that. A backup/export feature is planned for this reason.
-- On iOS, the installed home-screen app and Safari have separate storage.
-
-## Project layout
+| UI | Plain JavaScript modules, no framework |
+| Build | [Vite](https://vite.dev), run for free by GitHub Actions |
+| Database | IndexedDB via [Dexie.js](https://dexie.org). See [docs/DATABASE.md](docs/DATABASE.md) |
+| Offline | Service worker precaches every file; new versions show an "Update" prompt |
+| Tests | [Vitest](https://vitest.dev). Run on every push; a failing test blocks the deploy |
+| Hosting | GitHub Pages |
 
 ```
-index.html              App shell
-manifest.webmanifest    PWA manifest
-sw.js                   Service worker (offline cache)
-css/style.css           Styles (light/dark)
-js/app.js               Entry point, install prompt, status UI
-js/storage.js           IndexedDB layer + persistence request
-js/erase.js             Multi-step erase confirmation flow
-js/version.js           App version
-icons/                  App icons
-.github/workflows/      Pages deployment
-.devcontainer/          GitHub Codespaces setup
+index.html            page shell
+public/               icons + manifest (copied as-is)
+src/main.js           start-up, routing, live clock, updates
+src/db/               database: schema, records, repo (all writes), backups, safety copies
+src/logic/            pure functions: time parsing/formatting, sorting, colours
+src/ui/               views (task list, history, settings), dialogs, menus, layouts
+src/sw.js             service worker template
+tests/                automated tests
+.github/workflows/    test + deploy pipeline
 ```
 
-## Developing in the cloud
+## Working on it (all in the cloud)
 
-Everything can be done from a browser:
-
-1. On GitHub, click **Code → Codespaces → Create codespace on main**.
-2. The dev container starts a static server on port 8000 and opens a preview.
-3. Commit and push to `main`; the **Deploy to GitHub Pages** workflow publishes the site in about a minute.
-
-For quick edits, press `.` on the repo page to open github.dev.
+- **Quick edit:** open a file on GitHub and click ✏️. Commit to `main`; the
+  workflow tests, builds and deploys in about a minute. Watch it in the
+  **Actions** tab.
+- **Full editor:** Code → Codespaces → Create codespace. It installs everything
+  and opens a live preview (`npm run dev`). Run tests with `npm test`.
 
 ## Roadmap
 
-- [x] Scaffold: PWA shell, offline cache, install support, IndexedDB storage, persistent storage request, guarded erase flow, Pages deploy
-- [ ] Feature list (to be defined)
+- Grand total across all tasks for a date range
+- Always-on-top mini timer (Document Picture-in-Picture, Chrome/Edge)
+- Expiry reminder notifications
 
 ## License
 
-[GPL-3.0](LICENSE). You may use, modify and sell this software, including commercially, as long as any distributed version stays open source under the same license.
+[GPL-3.0](LICENSE). Anyone may use, modify and sell this software, including
+commercially, as long as distributed versions stay open source under the same
+license.

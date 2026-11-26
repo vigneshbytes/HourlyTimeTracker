@@ -1,0 +1,173 @@
+import './styles.css';
+import { liveQuery } from 'dexie';
+import { openDatabase, requestPersistence } from './db/index.js';
+import { buildStats, sessionDuration } from './logic/tasks.js';
+import { fmtClock, fmtDuration } from './logic/time.js';
+import { h, svgIcon, $ } from './ui/dom.js';
+import { toast } from './ui/dialogs.js';
+import { openMenu } from './ui/menu.js';
+import { createActions } from './ui/actions.js';
+import { createTaskListView } from './ui/taskList.js';
+import { createHistoryView, createTaskDetailView } from './ui/history.js';
+import { createSettingsView, createBulkArchiveView } from './ui/settings.js';
+import { installDarkGuard } from './ui/darkguard.js';
+import { setupLayout } from './ui/layout.js';
+import { setupInstances } from './ui/instances.js';
+
+const app = {
+  version: __APP_VERSION__,
+  data: { tasks: [], sessions: [], settings: {} },
+  stats: new Map(),
+  view: null,
+  viewKey: null,
+  running() { return app.data.sessions.find((s) => s.running === 1) || null; },
+  navigate(hash) { if (location.hash !== hash) location.hash = hash; else route(); },
+};
+
+function recompute() {
+  app.stats = buildStats(app.data.tasks, app.data.sessions, app.data.settings);
+}
+
+// ── Routing ────────────────────────────────────────────────────────────────
+const views = {};
+function route() {
+  const hash = location.hash || '#/';
+  const [, section = '', sub = ''] = hash.split('/');
+  let key, make;
+  if (section === 'history' && sub) { key = `detail:${sub}`; make = () => createTaskDetailView(app, decodeURIComponent(sub)); }
+  else if (section === 'history') { key = 'history'; make = () => createHistoryView(app); }
+  else if (section === 'settings' && sub === 'archive') { key = 'bulk'; make = () => createBulkArchiveView(app); }
+  else if (section === 'settings') { key = 'settings'; make = () => createSettingsView(app); }
+  else { key = 'tasks'; make = () => views.tasks || (views.tasks = createTaskListView(app)); }
+  if (key !== app.viewKey) {
+    app.viewKey = key;
+    app.view = make();
+    $('#view').replaceChildren(app.view.root);
+    $('#view').scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+  renderChrome();
+  app.view.render();
+}
+
+// ── Header (adapts to desktop / touch / widget) ─────────────────────────────
+function renderChrome() {
+  const nav = $('#topbar-actions');
+  const section = app.viewKey?.split(':')[0];
+  const link = (href, icon, label, active) => h('a', { href, class: `icon-btn${active ? ' active' : ''}`, 'aria-label': label, title: label }, svgIcon(icon));
+  if (app.mode === 'widget') {
+    const menuBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Menu', title: 'Menu' }, svgIcon('menu'));
+    menuBtn.addEventListener('click', () => openMenu({
+      anchor: menuBtn, asSheet: false,
+      items: [
+        { label: 'New task', icon: 'plus', onClick: () => app.actions.newTask() },
+        { label: 'Tasks', icon: 'clock', onClick: () => app.navigate('#/') },
+        { label: 'History', icon: 'history', onClick: () => app.navigate('#/history') },
+        { label: 'Settings', icon: 'settings', onClick: () => app.navigate('#/settings') },
+      ],
+    }));
+    nav.replaceChildren(menuBtn);
+  } else {
+    nav.replaceChildren(
+      h('button', { type: 'button', class: 'icon-btn add-btn', 'aria-label': 'New task', title: 'New task', onclick: () => app.actions.newTask() }, svgIcon('plus')),
+      link('#/history', 'history', 'History', section === 'history' || section === 'detail'),
+      link('#/settings', 'settings', 'Settings', section === 'settings' || section === 'bulk'));
+  }
+}
+
+// ── Live clock ─────────────────────────────────────────────────────────────
+let lastStatsAt = 0;
+function tick() {
+  const running = app.running();
+  const status = $('#topbar-status');
+  if (running) {
+    const task = app.data.tasks.find((t) => t.id === running.taskId);
+    const clock = fmtClock(sessionDuration(running));
+    document.title = `${clock} · ${task?.name ?? ''}`;
+    status.textContent = app.viewKey === 'tasks' ? '' : `● ${clock}`;
+    status.onclick = () => app.navigate('#/');
+    // Running totals anywhere on screen.
+    const st = app.stats.get(running.taskId);
+    if (st) {
+      const other = st.sessions.filter((s) => s.id !== running.id).reduce((a, s) => a + sessionDuration(s), 0);
+      document.querySelectorAll(`.js-total[data-task="${CSS.escape(running.taskId)}"]`).forEach((el) => { el.textContent = fmtDuration(other + sessionDuration(running)); });
+    }
+    document.querySelectorAll('.js-session-timer-detail').forEach((el) => { el.textContent = fmtDuration(sessionDuration(running)); });
+    // Colours depend on elapsed time; refresh them every 30 s while running.
+    if (Date.now() - lastStatsAt > 30000) { lastStatsAt = Date.now(); recompute(); app.view?.render(); }
+  } else {
+    document.title = 'TimeTracker';
+    status.textContent = '';
+  }
+  app.view?.tick();
+}
+
+// ── Service worker / updates ───────────────────────────────────────────────
+let updateRequested = false;
+function registerSW() {
+  if (!('serviceWorker' in navigator) || import.meta.env.DEV) return;
+  navigator.serviceWorker.register('./sw.js', { scope: './' }).then((reg) => {
+    const offer = (worker) => toast('A new version is ready.', { action: 'Update', duration: 60000, onAction: () => { updateRequested = true; worker.postMessage('skip-waiting'); } });
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+    });
+    setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  });
+  // Reload only when the user accepted an update (not on the very first install).
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (updateRequested && !reloading) { reloading = true; location.reload(); } });
+}
+
+function fatal(message) {
+  $('#view').replaceChildren(h('div', { class: 'card fatal' }, h('h2', null, 'Something went wrong'), h('p', null, message),
+    h('button', { class: 'btn btn-primary', type: 'button', onclick: () => location.reload() }, 'Reload')));
+}
+
+async function boot() {
+  installDarkGuard();
+  setupLayout(app, () => { if (app.view) { renderChrome(); app.view.render(); } });
+  let opened;
+  try {
+    opened = await openDatabase();
+  } catch (e) {
+    const msg = e?.name === 'VersionError'
+      ? 'Your data was saved by a newer version of TimeTracker. Reload to get the latest version. Your data is safe.'
+      : `The local database could not be opened: ${e.message}. Your data has not been changed.`;
+    fatal(msg);
+    registerSW();
+    return;
+  }
+  const { db, repo, snapshot } = opened;
+  Object.assign(app, { db, repo });
+  app.actions = createActions(app);
+  db.on('versionchange', () => {
+    db.close();
+    fatal('TimeTracker was updated in another window. Reload to continue. Your data is safe.');
+    return false;
+  });
+  if (snapshot) console.info('Safety copy saved:', snapshot);
+
+  requestPersistence().catch(() => {});
+  addEventListener('pointerdown', () => requestPersistence().catch(() => {}), { once: true });
+
+  liveQuery(() => repo.loadAll()).subscribe({
+    next: (data) => {
+      app.data = data;
+      recompute();
+      lastStatsAt = Date.now();
+      if (!app.view) route(); else app.view.render();
+      tick();
+    },
+    error: (e) => fatal(e.message),
+  });
+  addEventListener('hashchange', route);
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+  setupInstances();
+  registerSW();
+}
+
+boot();
