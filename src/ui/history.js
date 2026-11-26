@@ -7,7 +7,8 @@ import { openMenu } from './menu.js';
 const state = { query: '', filter: 'all', sort: 'created' };
 
 export function createHistoryView(app) {
-  const root = h('section', { class: 'view view-history' });
+  const root = h('section', { class: 'view view-history intro-anim' });
+  setTimeout(() => root.classList.remove('intro-anim'), 700);
   const search = h('input', { type: 'search', placeholder: 'Search tasks and notes', 'aria-label': 'Search', value: state.query,
     oninput: () => { state.query = search.value; renderResults(); } });
   const filters = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Filter' },
@@ -59,7 +60,8 @@ export function createHistoryView(app) {
 }
 
 export function createTaskDetailView(app, taskId) {
-  const root = h('section', { class: 'view view-detail' });
+  const root = h('section', { class: 'view view-detail intro-anim' });
+  setTimeout(() => root.classList.remove('intro-anim'), 900);
 
   function render() {
     const task = app.data.tasks.find((t) => t.id === taskId);

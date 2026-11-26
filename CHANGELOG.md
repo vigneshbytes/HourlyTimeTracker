@@ -5,6 +5,12 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.8.0 — Major
+- Starting a task: the card slides from its place in the list up into the top slot and grows into the expanded running view, while the other cards glide into their new places and the idle panel fades away (one 0.46 s motion). Stopping plays it in reverse.
+- New tasks drop into the list; the timer and Stop fade in once the card has landed.
+- Subtle motion: page fade-in, button press, card hover lift, menu items, dialogs and backdrop, top-bar timer pill, create-only banner, history rows, graph bars, changing stats, help popover, bulk-select highlight.
+- All motion is turned off when the device asks for reduced motion.
+
 ## 0.7.0 — Major
 - Idle card: the current time (hour:minute AM/PM, from the device's own clock and time zone) and full date lead the card; the "Last task" line is removed; greeting moves to the side.
 - Help: red 🛑 for stop, ⏱️ for timing, and real colour swatches matching the red/yellow cards instead of emoji squares (which render differently on each OS).

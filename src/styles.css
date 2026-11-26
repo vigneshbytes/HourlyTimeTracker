@@ -436,3 +436,66 @@ html:not([data-mode=widget]) .task-card.is-running .task-main { gap: 12px; }
 html[data-mode=widget] .idle-time { font-size: 1.15rem; }
 html[data-mode=widget] .idle-date { display: inline; font-size: .78rem; }
 html[data-mode=widget] .idle-greet { display: none; }
+
+/* ── Motion ───────────────────────────────────────────────────────────
+   Light-weight: only opacity/transform (plus one height animation for the
+   card that moves into the top slot). All of it is switched off when the
+   system asks for reduced motion (rule near the top of this file).      */
+.view-tasks { position: relative; }
+.view { animation: view-in .22s ease-out; }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* Buttons: soft press, smooth colour/shadow changes. */
+.btn, .icon-btn, .tb-btn, .seg-btn, .menu-item, .toast-action, .continue-btn, .link {
+  transition: background-color .16s, border-color .16s, color .16s, box-shadow .16s, transform .12s; }
+.btn:active, .icon-btn:active, .tb-btn:active, .seg-btn:active { transform: scale(.96); }
+.btn-primary:hover { box-shadow: 0 2px 8px rgb(31 111 235 / .25); }
+
+/* Task cards: gentle lift on hover (mouse only), press-in on click. */
+html:not([data-mode=touch]) .task-card:not(.is-running):hover { transform: translateY(-1px); }
+.task-card { transition: background-color .3s, border-color .3s, box-shadow .25s, transform .18s; }
+.task-main:active { transform: scale(.995); }
+.task-card .stop-btn { transition: background-color .16s, transform .12s, box-shadow .16s; }
+.task-card.is-running .task-main:active .stop-btn { transform: scale(.95); }
+
+/* Menus: items fade in one after another. */
+.menu.show .menu-item, .sheet-wrap.show .menu-item { animation: item-in .2s ease-out backwards; }
+.menu-item:nth-child(2) { animation-delay: .03s !important; }
+.menu-item:nth-child(3) { animation-delay: .06s !important; }
+.menu-item:nth-child(4) { animation-delay: .09s !important; }
+.menu-item:nth-child(5) { animation-delay: .12s !important; }
+@keyframes item-in { from { opacity: 0; transform: translateY(-3px); } }
+
+/* Dialogs: backdrop fades in with the box. */
+.modal[open]::backdrop { animation: fade-in .18s ease-out; }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* Top bar timer pill and create-only banner slide in. */
+.topbar-status:not([hidden]) .tb-link, .topbar-status:not([hidden]) .tb-btn { animation: pill-in .25s ease-out; }
+@keyframes pill-in { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
+.create-only-bar:not([hidden]) { animation: pill-in .25s ease-out; }
+
+/* History: rows rise in, hover tint. */
+.history-row { transition: box-shadow .2s, border-color .2s; }
+.intro-anim .history-row { animation: row-in .25s ease-out backwards; }
+.history-row:hover { box-shadow: var(--shadow); }
+.history-row:nth-child(2) { animation-delay: .02s; } .history-row:nth-child(3) { animation-delay: .04s; }
+.history-row:nth-child(4) { animation-delay: .06s; } .history-row:nth-child(5) { animation-delay: .08s; }
+.history-row:nth-child(n+6) { animation-delay: .1s; }
+@keyframes row-in { from { opacity: 0; transform: translateY(4px); } }
+.seg-btn[aria-checked=true] { transition: background-color .2s, box-shadow .2s, color .2s; }
+
+/* Graph: bars grow up from the axis. */
+.intro-anim .graph .bar { transform-box: fill-box; transform-origin: bottom; animation: bar-grow .45s cubic-bezier(.2,.8,.2,1) backwards; }
+@keyframes bar-grow { from { transform: scaleY(0); } }
+
+/* Bulk archive: selected rows tint smoothly. */
+.bulk-row { transition: background-color .18s, border-color .18s; }
+
+/* Idle stats: numbers fade when they change (class toggled in JS). */
+.stat-value.changed { animation: num-in .3s ease-out; }
+@keyframes num-in { from { opacity: .2; transform: translateY(3px); } }
+
+/* Help popover arrow-in already fades; add a soft scale. */
+.help-pop { transform-origin: top right; }
+.help-pop:not(.show) { transform: translateY(-4px) scale(.98); }

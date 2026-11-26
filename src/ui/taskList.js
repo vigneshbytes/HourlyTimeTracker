@@ -58,7 +58,7 @@ export function createTaskListView(app) {
     empty.hidden = true;
     const showIdle = hasTasks && !running;
     if (showIdle && !wasIdle) {
-      hero.animate?.([{ opacity: 0, transform: 'scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+      if (!reduceMotion()) hero.animate?.([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 120, easing: 'ease-out', fill: 'backwards' });
       loadQuote(); // a new quote every time the app becomes idle
     }
     wasIdle = showIdle;
@@ -74,7 +74,11 @@ export function createTaskListView(app) {
       ['This week', fmtDuration(st.weekMs)],
       ['Logs today', String(st.todayLogs)],
       ['Day streak', st.streak ? `${st.streak} ${st.streak === 1 ? 'day' : 'days'}` : '–'],
-    ].map(([label, value]) => h('div', { class: 'stat' }, h('dt', { class: 'stat-label' }, label), h('dd', { class: 'stat-value' }, value))));
+    ].map(([label, value], i) => {
+      const prevVal = statsEl.children[i]?.querySelector('.stat-value')?.textContent;
+      const dd = h('dd', { class: `stat-value${prevVal != null && prevVal !== value ? ' changed' : ''}` }, value);
+      return h('div', { class: 'stat' }, h('dt', { class: 'stat-label' }, label), dd);
+    }));
   }
 
   // Clock: the device's own clock and time zone (set in the operating system).
@@ -182,18 +186,28 @@ export function createTaskListView(app) {
     progress.firstChild.style.width = `${Math.min(100, st.ratio * 100)}%`;
   }
 
+  // One timing for the whole choreography so everything lands together.
+  const MOVE_MS = 460;
+  const MOVE_EASE = 'cubic-bezier(.2, .8, .2, 1)';
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   function render() {
     const { tasks } = app.data;
     const active = tasks.filter((t) => t.status === 'active');
     const sorted = sortMainList(active, app.stats);
+    const animate = !reduceMotion() && root.isConnected;
+
+    // FLIP "First": remember where every card and the idle panel were.
+    const before = new Map();
+    if (animate) for (const [id, li] of cards) before.set(id, li.getBoundingClientRect());
+    const heroWasVisible = !hero.hidden && hero.isConnected;
+    const heroRect = heroWasVisible ? hero.getBoundingClientRect() : null;
+    const ghost = animate && heroWasVisible ? hero.cloneNode(true) : null;
+
     list.hidden = sorted.length === 0;
     renderHero();
     // All tasks archived: point to History.
     empty.hidden = !(app.data.tasks.length > 0 && sorted.length === 0);
-
-    // FLIP: First — remember where every card was.
-    const before = new Map();
-    for (const [id, li] of cards) before.set(id, li.getBoundingClientRect());
 
     const seen = new Set();
     sorted.forEach((task, i) => {
@@ -207,28 +221,44 @@ export function createTaskListView(app) {
       if (!seen.has(id)) { li.remove(); cards.delete(id); }
     }
 
-    // Last, Invert, Play.
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      for (const [id, li] of cards) {
-        const prev = before.get(id);
-        if (li.classList.contains('entering')) {
-          li.animate([{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'ease-out' });
-          li.classList.remove('entering');
-          continue;
-        }
-        if (!prev) continue;
-        const now = li.getBoundingClientRect();
-        const dy = prev.top - now.top;
-        const sy = prev.height / now.height;
-        if (Math.abs(dy) > 1 || Math.abs(sy - 1) > 0.01) {
-          li.animate([
-            { transform: `translateY(${dy}px)`, transformOrigin: 'top' },
-            { transform: 'none', transformOrigin: 'top' },
-          ], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
-        }
+    if (!animate) { for (const li of cards.values()) li.classList.remove('entering'); tick(); return; }
+
+    // The idle panel leaves: a copy fades and sinks back while the card arrives.
+    if (ghost && hero.hidden) {
+      const rootRect = root.getBoundingClientRect();
+      Object.assign(ghost.style, { position: 'absolute', left: `${heroRect.left - rootRect.left}px`, top: `${heroRect.top - rootRect.top}px`,
+        width: `${heroRect.width}px`, height: `${heroRect.height}px`, margin: 0, pointerEvents: 'none', zIndex: 0 });
+      ghost.removeAttribute('aria-live');
+      root.append(ghost);
+      ghost.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }], { duration: MOVE_MS * 0.6, easing: 'ease-out', fill: 'forwards' })
+        .finished.then(() => ghost.remove(), () => ghost.remove());
+    }
+
+    // "Last, Invert, Play": every card glides from its old place to the new one.
+    for (const [id, li] of cards) {
+      if (li.classList.contains('entering')) {
+        li.classList.remove('entering');
+        li.animate([{ opacity: 0, transform: 'translateY(-8px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'ease-out' });
+        continue;
       }
-    } else {
-      for (const li of cards.values()) li.classList.remove('entering');
+      const prev = before.get(id);
+      if (!prev) continue;
+      const now = li.getBoundingClientRect();
+      const dy = prev.top - now.top;
+      const grew = Math.abs(prev.height - now.height) > 1;
+      if (Math.abs(dy) < 1 && !grew) continue;
+      li.style.zIndex = grew ? 2 : 1; // the moving/expanding card travels above the others
+      const frames = grew
+        ? [{ transform: `translateY(${dy}px)`, height: `${prev.height}px`, overflow: 'hidden' },
+           { transform: 'none', height: `${now.height}px`, overflow: 'hidden' }]
+        : [{ transform: `translateY(${dy}px)` }, { transform: 'none' }];
+      const anim = li.animate(frames, { duration: MOVE_MS, easing: MOVE_EASE });
+      anim.finished.then(() => { li.style.zIndex = ''; }, () => { li.style.zIndex = ''; });
+      // Expanded view: timer and Stop fade in as the card settles into the slot.
+      if (grew && li.classList.contains('is-running')) {
+        li._els.timer.parentElement.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+          { duration: 260, delay: MOVE_MS * 0.55, easing: 'ease-out', fill: 'backwards' });
+      }
     }
     tick();
   }
