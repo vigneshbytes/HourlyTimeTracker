@@ -5,11 +5,13 @@ const PRECACHE = '__PRECACHE__';
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const hadAppCache = (await caches.keys()).some((k) => k.startsWith('htt-'));
+    const keys = await caches.keys();
+    const legacyActive = keys.some((k) => k.startsWith('timetracker-'));
+    const hadAppCache = keys.some((k) => k.startsWith('htt-'));
     await (await caches.open(CACHE)).addAll(PRECACHE);
     // First real version replacing the early scaffold: take over right away.
     // Later versions wait for the user to press "Update".
-    if (!hadAppCache) self.skipWaiting();
+    if (legacyActive || !hadAppCache) self.skipWaiting();
   })());
 });
 
