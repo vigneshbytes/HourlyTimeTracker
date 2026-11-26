@@ -1,0 +1,13 @@
+{
+  "name": "TimeTracker",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {}
+  },
+  "forwardPorts": [8000],
+  "portsAttributes": { "8000": { "label": "TimeTracker preview", "onAutoForward": "openPreview" } },
+  "postAttachCommand": "python3 -m http.server 8000",
+  "customizations": {
+    "vscode": { "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"] }
+  }
+}

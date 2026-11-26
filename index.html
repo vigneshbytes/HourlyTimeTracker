@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TimeTracker</title>
+  <meta name="description" content="Offline-first time tracker for hourly-paid projects. All data stays in your browser.">
+  <meta name="theme-color" content="#1f6feb">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="./css/style.css">
+  <script type="module" src="./js/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>⏱ TimeTracker</h1>
+    <button id="install-btn" class="btn" hidden>Install app</button>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Welcome</h2>
+      <p>This is the scaffold. Timer features are coming next. Everything you record stays in this browser, on this device. Nothing is sent to a server.</p>
+    </section>
+
+    <section class="card">
+      <h2>Storage</h2>
+      <dl class="status">
+        <dt>Database</dt><dd id="db-status">Checking…</dd>
+        <dt>Persistent storage</dt><dd id="persist-status">Checking…</dd>
+        <dt>Usage</dt><dd id="usage-status">Checking…</dd>
+        <dt>Records</dt><dd id="record-count">–</dd>
+        <dt>Offline ready</dt><dd id="sw-status">Checking…</dd>
+      </dl>
+      <div class="row">
+        <button id="persist-btn" class="btn" hidden>Request persistent storage</button>
+        <button id="sample-btn" class="btn">Add a test record</button>
+      </div>
+    </section>
+
+    <section class="card danger-zone">
+      <h2>Danger zone</h2>
+      <p>Erasing removes every project and time entry stored in this browser. It cannot be undone.</p>
+      <button id="erase-btn" class="btn btn-danger">Erase all data…</button>
+    </section>
+  </main>
+
+  <dialog id="erase-dialog">
+    <form method="dialog" id="erase-form">
+      <h2 id="erase-title"></h2>
+      <div id="erase-body"></div>
+      <div class="row end">
+        <button type="button" id="erase-cancel" class="btn" autofocus>Cancel</button>
+        <button type="button" id="erase-next" class="btn btn-danger"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>
+    <small>Free software under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a>. <span id="app-version"></span></small>
+  </footer>
+</body>
+</html>
