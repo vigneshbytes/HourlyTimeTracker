@@ -536,3 +536,6 @@ html[data-mode=widget] .help-btn { margin: 3px; }
 /* Narrow phones: the logo alone carries the brand so the streak and buttons fit on one line. */
 @media (max-width: 430px) { .topbar:has(.streak:not([hidden])) .brand-text { display: none; } }
 @media (max-width: 360px) { .brand-text { display: none; } }
+html[data-mode=widget] .topbar .add-btn { width: 30px; height: 30px; margin-right: 2px; }
+.tb-clock { flex: none; }
+@media (max-width: 400px) { html[data-mode=widget] .tb-name { display: none; } html[data-mode=widget] .topbar:has(.topbar-status:not([hidden])) .streak { display: none; } }

@@ -78,23 +78,21 @@ function renderChrome() {
   const nav = $('#topbar-actions');
   const section = app.viewKey?.split(':')[0];
   const link = (href, icon, label, active) => h('a', { href, class: `icon-btn${active ? ' active' : ''}`, 'aria-label': label, title: label }, svgIcon(icon));
+  // New task and History are always in the header, in every layout.
+  const addBtn = h('button', { type: 'button', class: 'icon-btn add-btn', 'aria-label': 'New task', title: 'New task', onclick: () => app.actions.newTask() }, svgIcon('plus'));
+  const historyLink = link('#/history', 'history', 'History', section === 'history' || section === 'detail');
   if (app.mode === 'widget') {
     const menuBtn = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Menu', title: 'Menu' }, svgIcon('menu'));
     menuBtn.addEventListener('click', () => openMenu({
       anchor: menuBtn, asSheet: false,
       items: [
-        { label: 'New task', icon: 'plus', onClick: () => app.actions.newTask() },
         { label: 'Tasks', icon: 'clock', onClick: () => app.navigate('#/') },
-        { label: 'History', icon: 'history', onClick: () => app.navigate('#/history') },
         { label: 'Settings', icon: 'settings', onClick: () => app.navigate('#/settings') },
       ],
     }));
-    nav.replaceChildren(helpBtn, menuBtn);
+    nav.replaceChildren(addBtn, historyLink, helpBtn, menuBtn);
   } else {
-    nav.replaceChildren(
-      h('button', { type: 'button', class: 'icon-btn add-btn', 'aria-label': 'New task', title: 'New task', onclick: () => app.actions.newTask() }, svgIcon('plus')),
-      link('#/history', 'history', 'History', section === 'history' || section === 'detail'),
-      helpBtn,
+    nav.replaceChildren(addBtn, historyLink, helpBtn,
       link('#/settings', 'settings', 'Settings', section === 'settings' || section === 'bulk'));
   }
 }

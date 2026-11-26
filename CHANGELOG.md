@@ -5,6 +5,10 @@ Versions follow `0.MAJOR.MINOR` until 1.0:
 **Minor** = a small fix or tweak (last number goes up).
 Every commit subject starts with `Major:` or `Minor:` and names the new version, e.g. `(v0.5.2)`.
 
+## 0.9.1 — Minor
+- Small window: the + (new task) and History buttons are always in the header again; the ☰ menu keeps Tasks and Settings.
+- Very narrow windows: the top-bar timer keeps its digits visible (task name and streak step aside).
+
 ## 0.9.0 — Major
 - Small window: the top card is now 84px instead of 128px (time, date and one row of stats when idle; name, timer and Stop when running). Smaller header buttons.
 - Idle card stats are now Today · Sessions today · Daily avg. Daily avg = all tracked time ÷ days with any tracked time, so days off don't lower it.
