@@ -14,15 +14,15 @@ export function createHistoryView(app) {
     ['all', 'active', 'archived'].map((f) => h('button', { type: 'button', class: 'seg-btn', role: 'radio', dataset: { f },
       onclick: () => { state.filter = f; renderResults(); } }, f[0].toUpperCase() + f.slice(1))));
   const sort = h('select', { 'aria-label': 'Sort by', onchange: () => { state.sort = sort.value; renderResults(); } },
-    h('option', { value: 'created' }, 'Newest created'),
-    h('option', { value: 'completed' }, 'Recently completed'));
+    h('option', { value: 'created' }, 'Creation'),
+    h('option', { value: 'completed' }, 'Completion'));
   sort.value = state.sort;
   const results = h('ul', { class: 'history-list' });
   const summary = h('p', { class: 'muted small' });
   root.append(
     h('div', { class: 'history-controls' },
       h('label', { class: 'search' }, svgIcon('search', 18), search),
-      h('div', { class: 'controls-row' }, filters, sort)),
+      h('div', { class: 'controls-row' }, filters, h('label', { class: 'sort-label' }, h('span', null, 'Sort by:'), sort))),
     summary, results);
 
   function row(task) {
