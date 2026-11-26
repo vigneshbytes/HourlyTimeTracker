@@ -16,6 +16,11 @@ a computer) that packs the home view. Code: `src/ui/miniTimer.js`.
   the fixed heights to it (`miniLayout(minH)`, kept within ±20% of 52; the
   three rail icons + two gaps always equal the height). The measured minimum is
   saved per browser (localStorage `htt.miniMin`).
+- **Fallback:** if the browser still opens it bigger than 120% of 240 × 52
+  (Vivaldi did, even with the flag), the first click or key press inside the
+  mini timer snaps it to the smallest size (`resizeBy`; Chromium only allows
+  resizing this window during a gesture inside it, the opener's click doesn't
+  count). That first click only resizes. A saved minimum outside ±20% is ignored.
 - If the user resizes the window, that size is used next time
   (`htt.miniUserSize`); shrinking it back to the minimum returns to the default.
   `preferInitialWindowPlacement: true` is always passed so Chromium never

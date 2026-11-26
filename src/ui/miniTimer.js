@@ -213,7 +213,12 @@ export function createMiniTimer(app) {
   try { localStorage.removeItem('htt.miniSize'); } catch { /* v0.14.0 key: could hold a size you never chose */ }
   const readJson = (k) => { try { return JSON.parse(localStorage.getItem(k)) || null; } catch { return null; } };
   const writeJson = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage blocked */ } };
-  const knownMin = () => { const m = readJson(MIN_KEY); return m && m.ua === navigator.userAgent ? m : null; };
+  // A saved minimum only counts if it's within 20% of Chromium's (v0.14.1 could
+  // save a big size when the browser ignored the request).
+  const knownMin = () => {
+    const m = readJson(MIN_KEY);
+    return m && m.ua === navigator.userAgent && m.width <= X * (1 + TOL) && m.height <= Y * (1 + TOL) ? m : null;
+  };
 
   function launchRequest() {
     const user = readJson(USER_KEY);
@@ -231,11 +236,48 @@ export function createMiniTimer(app) {
     s.setProperty('--h1', `${L.h1}px`); s.setProperty('--icon', `${L.icon}px`); s.setProperty('--row', `${L.row}px`);
   }
 
+  const nextFrame = () => new Promise((r) => win.requestAnimationFrame(() => win.requestAnimationFrame(() => r())));
+  // Within 20% of Chromium's minimum: this is the browser's own smallest size.
+  const nearMin = () => win.innerWidth <= X * (1 + TOL) && win.innerHeight <= Y * (1 + TOL);
+
+  // Fallback when a browser opens the window bigger than asked (some reuse an
+  // old size regardless). Chromium lets a page resize this window only during
+  // a click or key press inside it, so the first click / key in the mini timer
+  // snaps it to the smallest size. That first click only resizes (it does not
+  // also press whatever is under the cursor, which moves when the window shrinks).
+  let shrinkArmed = false;
+  function armShrink() {
+    shrinkArmed = true;
+    const onGesture = async (e) => {
+      d?.removeEventListener('pointerdown', onGesture, true);
+      d?.removeEventListener('keydown', onGesture, true);
+      if (!shrinkArmed || !win || nearMin()) { shrinkArmed = false; return; }
+      shrinkArmed = false;
+      if (e.type === 'pointerdown') {
+        e.preventDefault(); e.stopPropagation();
+        const eat = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+        d.addEventListener('click', eat, { capture: true, once: true });
+        setTimeout(() => d?.removeEventListener('click', eat, true), 600);
+      }
+      openedAt = Date.now(); // not a size you chose
+      try { win.resizeBy(Math.round(X * (1 - TOL)) - win.innerWidth, Math.round(Y * (1 - TOL)) - win.innerHeight); } catch { return; }
+      await nextFrame();
+      if (win && nearMin()) {
+        writeJson(MIN_KEY, { ua: navigator.userAgent, width: win.innerWidth, height: win.innerHeight });
+        applyLayout(win.innerHeight);
+      }
+    };
+    d.addEventListener('pointerdown', onGesture, true);
+    d.addEventListener('keydown', onGesture, true);
+  }
+
   let openedAt = 0;
   let sizeTimer = null;
   function onResize() {
-    // Resizes in the first moments are the browser settling the window, not you.
+    // Resizes in the first moments are the browser settling the window (or our
+    // own snap to the smallest size), not you.
     if (Date.now() - openedAt < 1000) return;
+    shrinkArmed = false; // you resized it yourself: keep your size
     clearTimeout(sizeTimer);
     sizeTimer = setTimeout(() => { if (win) writeJson(USER_KEY, { width: win.innerWidth, height: win.innerHeight }); }, 400);
   }
@@ -252,9 +294,10 @@ export function createMiniTimer(app) {
     build();
     cardKey = gridKey = '';
     if (!userSize) {
-      // Opened at the smallest size this browser allows: measure it.
-      await new Promise((r) => win.requestAnimationFrame(() => r()));
-      writeJson(MIN_KEY, { ua: navigator.userAgent, width: win.innerWidth, height: win.innerHeight });
+      // Should now be at the smallest size this browser allows: measure it.
+      await nextFrame();
+      if (nearMin()) writeJson(MIN_KEY, { ua: navigator.userAgent, width: win.innerWidth, height: win.innerHeight });
+      else armShrink(); // the browser ignored the requested size
     }
     applyLayout(knownMin()?.height ?? Y);
     // Interactive / widget state. Hover is pure CSS (html:hover), which the
@@ -264,7 +307,7 @@ export function createMiniTimer(app) {
     win.addEventListener('focus', updateState);
     win.addEventListener('blur', updateState);
     d.addEventListener('focusin', updateState);
-    win.addEventListener('pagehide', () => { win = null; d = null; panel = null; clearTimeout(errorTimer); clearTimeout(sizeTimer); app.onMiniChange?.(false); });
+    win.addEventListener('pagehide', () => { shrinkArmed = false; win = null; d = null; panel = null; clearTimeout(errorTimer); clearTimeout(sizeTimer); app.onMiniChange?.(false); });
     app.onMiniChange?.(true);
     updateState();
     tick();

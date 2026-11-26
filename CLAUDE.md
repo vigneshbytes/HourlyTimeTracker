@@ -6,7 +6,8 @@
   gaps; interactive state when selected OR hovered or when nothing is running,
   widget state otherwise with the card filling the space; opens on task start;
   launch size = last user resize, else the browser's own minimum (request
-  20% under 240 × 52, measure, fit heights within ±20%); no undo pop-ups; no scrollbars; no animations; no top bar, no streak or
+  20% under 240 × 52, measure, fit heights within ±20%; if opened big anyway,
+  the first click/key inside snaps it to the minimum); no undo pop-ups; no scrollbars; no animations; no top bar, no streak or
   date) and the shared-logic architecture (`createActions(app, ui)`).
 - Standing rules: no dark mode ever; never track or show pay/rates; archive is
   manual only; every commit is `Major:` or `Minor:` with the version and a
